@@ -1,4 +1,4 @@
-#3D Furniture Configurator System
+# 3D Furniture Configurator System
 
 A web-based 3D furniture configuration system developed as a final year project. The system allows customers to browse furniture products, configure a virtual room with 3D furniture models, manage a shopping cart, place orders, and interact with an admin-managed furniture catalog.
 
