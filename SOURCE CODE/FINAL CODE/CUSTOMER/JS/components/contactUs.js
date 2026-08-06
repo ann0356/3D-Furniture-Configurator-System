@@ -5,14 +5,13 @@ export function initContactUs() {
     if (!form) return;
 
     form.addEventListener('submit', async (e) => {
-        e.preventDefault(); // 阻止页面刷新
+        e.preventDefault();
 
         const btn = document.getElementById('cf-submit-btn');
         const originalBtnText = btn.innerText;
         btn.innerText = 'Sending...';
         btn.disabled = true;
 
-        // 获取表单数据
         const payload = {
             name: document.getElementById('cf-name').value,
             phone: document.getElementById('cf-phone').value,
@@ -24,17 +23,14 @@ export function initContactUs() {
         };
 
         try {
-            // 上传到数据库
             const { error } = await _supabase
                 .from('contact_messages')
                 .insert([payload]);
 
             if (error) throw error;
 
-            // 成功提示
             alert('Thank you! Your message has been sent successfully.');
-            form.reset(); // 清空表单
-
+            form.reset();
         } catch (error) {
             console.error('Error submitting contact form:', error);
             alert('Failed to send message: ' + error.message);

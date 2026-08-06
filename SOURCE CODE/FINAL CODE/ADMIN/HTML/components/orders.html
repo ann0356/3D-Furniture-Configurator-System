@@ -2,7 +2,7 @@
     .ao-root *, .ao-root *::before, .ao-root *::after { box-sizing: border-box; }
     .ao-root { font-family: 'Inter', sans-serif; padding: 20px; background: #f8fafc; min-height: 85vh; color: #1e293b; }
     
-    /* ── Header & Controls ── */
+    /*  Header & Controls  */
     .ao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
     .ao-title { font-size: 24px; font-weight: bold; margin: 0; }
     
@@ -17,7 +17,7 @@
     .ao-btn-reset { background: #94a3b8; }
     .ao-btn-reset:hover { background: #64748b; }
 
-    /* ── Table Area ── */
+    /*  Table Area  */
     .ao-table-container { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow-x: auto; }
     .ao-table { width: 100%; border-collapse: collapse; text-align: left; }
     .ao-table th { background: #f1f5f9; padding: 14px 20px; font-size: 13px; font-weight: 600; color: #475569; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
@@ -25,13 +25,12 @@
     .ao-table tr:last-child td { border-bottom: none; }
     .ao-table tr:hover { background: #f8fafc; }
 
-    /* ── Status Dropdown & Badges ── */
+    /*  Status Dropdown & Badges  */
     .status-select { padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid transparent; cursor: pointer; outline: none; appearance: none; text-align: center; width: 120px; }
-    
-    /* 状态颜色动态定义在 JS 中，但我们给 select 加上交互效果 */
+
     .status-select:hover { filter: brightness(0.95); }
     
-    /* ── Empty State ── */
+    /*  Empty State  */
     .ao-empty { padding: 40px; text-align: center; color: #94a3b8; font-size: 16px; }
 </style>
 

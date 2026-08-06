@@ -27,10 +27,7 @@ export async function initProducts() {
     await loadCategories();
 }
 
-// ==========================================
-// 1. DATA RENDERING & INTERFACES
-// ==========================================
-
+// data rendering
 async function loadCategories() {
     document.getElementById('nav-type-separator').style.display = 'none';
     document.getElementById('nav-furniture-separator').style.display = 'none';
@@ -51,14 +48,13 @@ async function loadCategories() {
             cat.category_name, 
             `ID: ${cat.category_id}`, 
             () => { currentCategoryId = cat.category_id; currentCategoryName = cat.category_name; loadTypes(); }, 
-            async (e) => { // 倒数第二个参数：删除
+            async (e) => {
                 e.stopPropagation();
                 if (confirm(`🚨 DANGER: Delete category "${cat.category_name}"? This cascades to all sub-items!`)) {
                     const { error: delErr } = await _supabase.from('category').delete().eq('category_id', cat.category_id);
                     if (delErr) alert(delErr.message); else loadCategories();
                 }
             },
-            // 🌟 放在这里：最后一个参数，负责触发编辑弹窗
             (e) => { 
                 e.stopPropagation(); 
                 openEditModal('category', cat.category_id, cat.category_name); 
@@ -92,14 +88,13 @@ async function loadTypes() {
             type.type_name, 
             `ID: ${type.type_id}`, 
             () => { currentTypeId = type.type_id; currentTypeName = type.type_name; loadFurniture(); }, 
-            async (e) => { // 倒数第二个参数：删除
+            async (e) => {
                 e.stopPropagation();
                 if (confirm(`Delete type "${type.type_name}"?`)) {
                     const { error: delErr } = await _supabase.from('type').delete().eq('type_id', type.type_id);
                     if (delErr) alert(delErr.message); else loadTypes();
                 }
             },
-            // 🌟 放在这里：最后一个参数，负责触发编辑弹窗
             (e) => { 
                 e.stopPropagation(); 
                 openEditModal('type', type.type_id, type.type_name); 
@@ -170,7 +165,6 @@ async function loadFurniture() {
                 const imgLink = s.image_url ? `<a href="${s.image_url}" target="_blank" style="color:#3498db; text-decoration:underline;">View</a>` : 'N/A';
                 const modelLink = s.model_url ? `<span class="btn-preview-3d" data-url="${s.model_url}" style="color:#e67e22; cursor:pointer; text-decoration:underline; font-weight:bold;">Preview</span>` : 'N/A';
                 
-                // 🌟 1. 列表渲染层：注入 Dimensions 长宽高数据展示
                 tableHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding:8px;">${s.structure_id}</td>
@@ -252,10 +246,6 @@ async function loadFurniture() {
     container.appendChild(createAddButton("➕ Add New Furniture", () => document.getElementById('modal-furniture').style.display = 'flex'));
 }
 
-// ==========================================
-// 2. CREATION CONTROL ACTIONS
-// ==========================================
-
 async function checkIdExists(table, column, value) {
     const { data } = await _supabase.from(table).select(column).eq(column, value);
     return data && data.length > 0;
@@ -307,7 +297,6 @@ async function saveStructure() {
         const sColour = document.getElementById('input-str-colour').value.trim();
         const sMaterial = document.getElementById('input-str-material').value.trim();
         
-        // 🌟 2. 保存逻辑层：提取数值输入框
         const sLength = document.getElementById('input-str-length').value || 0;
         const sWidth = document.getElementById('input-str-width').value || 0;
         const sHeight = document.getElementById('input-str-height').value || 0;
@@ -337,7 +326,6 @@ async function saveStructure() {
             publicModelUrl = _supabase.storage.from('furniture-models').getPublicUrl(fileName).data.publicUrl;
         }
 
-        // 🌟 写入数据库的字段字典映射
         const { error: insErr } = await _supabase.from('structure').insert([{
             structure_id: sId, furniture_id: currentFurnitureId, structure_name: sName,
             price: sPrice, stock: sStock, colour: sColour, material: sMaterial,
@@ -357,7 +345,6 @@ async function saveStructure() {
         document.getElementById('input-str-colour').value = '';
         document.getElementById('input-str-material').value = '';
         
-        // 🌟 新增：重置时清空长宽高域
         document.getElementById('input-str-length').value = '';
         document.getElementById('input-str-width').value = '';
         document.getElementById('input-str-height').value = '';
@@ -374,14 +361,7 @@ async function saveStructure() {
     }
 }
 
-// ==========================================
-// 3. EDIT ACTIONS COMMITS
-// ==========================================
-
-// ==========================================
-// 3. EDIT ACTIONS UPDATES COMMITS (通用编辑控制中心)
-// ==========================================
-
+// edit function
 function openEditModal(table, id, currentName, currentDesc = '') {
     editTargetTable = table;
     editTargetId = id;
@@ -392,7 +372,6 @@ function openEditModal(table, id, currentName, currentDesc = '') {
     const descContainer = document.getElementById('edit-desc-container');
     const descInput = document.getElementById('input-edit-desc-val');
 
-    // 🌟 核心：如果修改的是家具，就把 Description 文本框显示出来并塞入原本的描述
     if (table === 'furniture') {
         descContainer.style.display = 'flex';
         descInput.value = currentDesc || '';
@@ -410,12 +389,10 @@ async function submitEditGeneric() {
 
     const pkTarget = `${editTargetTable}_id`;
     
-    // 构造基础更新字典
     const updatePayload = {
         [`${editTargetTable}_name`]: newName
     };
 
-    // 🌟 核心：如果是家具，把修改后的描述也塞进更新字典中
     if (editTargetTable === 'furniture') {
         const newDesc = document.getElementById('input-edit-desc-val').value.trim();
         updatePayload['description'] = newDesc;
@@ -426,7 +403,6 @@ async function submitEditGeneric() {
 
     document.getElementById('modal-edit-generic').style.display = 'none';
     
-    // 刷新对应层级的列表
     if (editTargetTable === 'category') loadCategories();
     else if (editTargetTable === 'type') loadTypes();
     else if (editTargetTable === 'furniture') loadFurniture();
@@ -441,7 +417,6 @@ function openEditStructureModal(strObj) {
     document.getElementById('input-edit-str-colour').value = strObj.colour || '';
     document.getElementById('input-edit-str-material').value = strObj.material || '';
     
-    // 🌟 3. 编辑填充层：自动载入当前记录的尺寸参数数据
     document.getElementById('input-edit-str-length').value = strObj.length || 0;
     document.getElementById('input-edit-str-width').value = strObj.width || 0;
     document.getElementById('input-edit-str-height').value = strObj.height || 0;
@@ -464,7 +439,6 @@ async function submitEditStructure() {
         const colour = document.getElementById('input-edit-str-colour').value.trim();
         const material = document.getElementById('input-edit-str-material').value.trim();
         
-        // 🌟 4. 编辑提交层：捕获修改后的长宽高
         const length = document.getElementById('input-edit-str-length').value || 0;
         const width = document.getElementById('input-edit-str-width').value || 0;
         const height = document.getElementById('input-edit-str-height').value || 0;
@@ -494,7 +468,6 @@ async function submitEditStructure() {
             updatedModelUrl = _supabase.storage.from('furniture-models').getPublicUrl(fileName).data.publicUrl;
         }
 
-        // 🌟 注入更新集字典中
         const { error: upErr } = await _supabase.from('structure').update({
             structure_name: name, price: price, stock: stock, colour: colour, material: material,
             length: length, width: width, height: height, // Update payload
@@ -515,10 +488,6 @@ async function submitEditStructure() {
     }
 }
 
-// ==========================================
-// 4. UI BUILDERS WRAPPER COMPONENTS
-// ==========================================
-
 function createCard(title, subtitle, onClick, onDelete, onEdit) {
     const card = document.createElement('div');
     card.style.background = "white"; card.style.padding = "20px"; card.style.borderRadius = "8px";
@@ -538,7 +507,6 @@ function createCard(title, subtitle, onClick, onDelete, onEdit) {
     card.onmouseout = () => { card.style.border = "1px solid transparent"; card.querySelector('.card-actions').style.display = 'none'; };
     
     card.onclick = onClick;
-    // 🌟 修复：直接执行外部传进来的 onEdit 参数，不要再写硬编码的变量了！
     card.querySelector('.btn-edit-card').onclick = onEdit; 
     card.querySelector('.btn-delete-card').onclick = onDelete;
     return card;

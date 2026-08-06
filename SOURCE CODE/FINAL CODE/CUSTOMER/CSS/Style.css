@@ -1,6 +1,3 @@
-/* ==========================================
-   ♿ 无障碍性 (a11y) 全局 CSS 变量
-   ========================================== */
 :root {
     --bg-main: #fafafa;
     --bg-header: #ffffff;
@@ -14,20 +11,18 @@
     --font-scale: 1; 
 }
 
-/* 🌟 高对比度模式 (极简黑白纯色) */
+/* high contrast mode */
 body.high-contrast-mode {
-    --bg-main: #000000;       /* 纯黑背景 */
-    --bg-header: #000000;     /* 纯黑顶部栏 */
-    --bg-nav: #1a1a1a;        /* 深灰色导航栏，用来和纯黑背景稍微区分 */
-    --text-main: #ffffff;     /* 纯白主文字 */
-    --text-hover: #cccccc;    /* 浅灰悬停文字 */
-    --border-main: #ffffff;   /* 纯白边框 */
-    --footer-bg: #000000;     /* 纯黑页脚 */
-    --footer-text: #ffffff;   /* 纯白页脚字 */
+    --bg-main: #000000; 
+    --bg-header: #000000;
+    --bg-nav: #1a1a1a; 
+    --text-main: #ffffff;
+    --text-hover: #cccccc;
+    --border-main: #ffffff;
+    --footer-bg: #000000;
+    --footer-text: #ffffff;
 }
-/* ==========================================
-   Global styles
-   ========================================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -35,7 +30,6 @@ body.high-contrast-mode {
 }
 
 body {
-    /* 🌟 应用全局无障碍属性 */
     background-color: var(--bg-main);
     color: var(--text-main);
     font-size: calc(16px * var(--font-scale));
@@ -48,7 +42,7 @@ li {
 li a {
     text-decoration: none;
     color: var(--text-main);
-    font-size: calc(16px * var(--font-scale)); /* 动态缩放 */
+    font-size: calc(16px * var(--font-scale));
 }
 
 li a:hover {
@@ -56,7 +50,7 @@ li a:hover {
 }
 
 i {
-    font-size: calc(24px * var(--font-scale)); /* 图标也跟随放大 */
+    font-size: calc(24px * var(--font-scale));
     color: var(--text-main);
 }
 
@@ -69,7 +63,7 @@ i a:hover {
     color: var(--text-hover);
 }
 
-/* 滚动条 */
+/* scroll bar*/
 #orders-container::-webkit-scrollbar { width: 6px; }
 #orders-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
 #orders-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -184,7 +178,6 @@ nav {
     top: 0;
     z-index: 1000;
     background-color: var(--bg-nav);
-    /* position: relative; */
 }
 
 .product-categories { display: flex; }

@@ -8,37 +8,32 @@ window.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password');
     const forgotPwdLink = document.getElementById('forgot-password-link'); // 获取忘记密码按钮
 
-    // 1. 显示/隐藏密码
     togglePasswordCheckbox.addEventListener('change', function() {
         passwordInput.type = this.checked ? 'text' : 'password';
     });
 
-    // 🌟 2. 新增：监听回车键 (Enter) 自动提交登录
     const allInputs = document.querySelectorAll('input');
     allInputs.forEach(input => {
         input.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault(); 
-                loginBtn.click(); // 模拟点击登录按钮
+                loginBtn.click();
             }
         });
     });
 
-    // 🌟 3. 新增：忘记密码功能逻辑
     if (forgotPwdLink) {
         forgotPwdLink.addEventListener('click', async (e) => {
-            e.preventDefault(); // 阻止 <a> 标签默认的网页跳转
+            e.preventDefault();
             
             const email = emailInput.value.trim();
 
-            // 检查用户有没有输入邮箱
             if (!email) {
                 alert("Please enter your email address in the box first to reset your password.");
-                emailInput.focus(); // 自动把光标移到邮箱输入框
+                emailInput.focus();
                 return;
             }
 
-            // 调用 Supabase 发送密码重置邮件
             alert("Sending reset email...");
             const { data, error } = await _supabase.auth.resetPasswordForEmail(email);
 
@@ -52,7 +47,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. 登录功能核心逻辑
     loginBtn.addEventListener('click', async () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;

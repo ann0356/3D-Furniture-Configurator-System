@@ -5,18 +5,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updateSection = document.getElementById('update-section');
     const requestForm = document.getElementById('request-form');
     const updateForm = document.getElementById('update-form');
-    
-    // 控制旧密码显示状态的变量
-    let isPasswordRecoveryMode = false;
-    let currentUserEmail = null; // 用于验证旧密码时需要
 
-    // ==========================================
-    // 🧠 1. 智能状态检测
-    // ==========================================
+    let isPasswordRecoveryMode = false;
+    let currentUserEmail = null;
+
     async function checkState() {
         const { data: { session } } = await _supabase.auth.getSession();
-        
-        // 检查是不是从邮箱点 "Reset Password" 链接过来的
         const hash = window.location.hash;
         if (hash && hash.includes('type=recovery')) {
             isPasswordRecoveryMode = true;
@@ -27,21 +21,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             requestSection.style.display = 'none';
             updateSection.style.display = 'block';
 
-            // 🌟 核心逻辑：如果是忘记密码流程进来的，隐藏旧密码框
             if (isPasswordRecoveryMode) {
                 document.getElementById('old-password-group').style.display = 'none';
                 document.getElementById('upd-old-password').removeAttribute('required');
                 document.getElementById('update-title').innerText = "Reset Password";
                 document.getElementById('update-desc').innerText = "Please set your new password.";
             } else {
-                // 如果是登录状态下主动点 "修改密码" 过来的，必须强制输入旧密码
                 document.getElementById('old-password-group').style.display = 'block';
                 document.getElementById('upd-old-password').setAttribute('required', 'true');
                 document.getElementById('update-title').innerText = "Change Password";
                 document.getElementById('update-desc').innerText = "Please enter your current password to verify your identity.";
             }
         } else {
-            // 没登录且没有带着恢复链接，显示让你输邮箱的界面
             requestSection.style.display = 'block';
             updateSection.style.display = 'none';
         }
@@ -56,9 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await checkState();
 
-    // ==========================================
-    // 📩 2. 处理发送邮件请求 (Forgot Password)
-    // ==========================================
     if (requestForm) {
         requestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -84,9 +72,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // ==========================================
-    // 🔐 3. 处理更新密码请求 (Update Password)
-    // ==========================================
     if (updateForm) {
         updateForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -95,7 +80,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newPassword = document.getElementById('upd-password').value;
             const confirmPassword = document.getElementById('upd-confirm').value;
 
-            // 基础校验
             if (newPassword !== confirmPassword) {
                 return alert("Passwords do not match! Please try again.");
             }
@@ -111,11 +95,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.disabled = true;
 
             try {
-                // 🌟 核心防线：如果不是“忘记密码”模式，就必须先验证旧密码！
                 if (!isPasswordRecoveryMode) {
                     if (!oldPassword) throw new Error("Current password is required.");
-                    
-                    // 利用 Supabase 的 signIn 机制来静默验证旧密码是否正确
+
                     const { error: verifyError } = await _supabase.auth.signInWithPassword({
                         email: currentUserEmail,
                         password: oldPassword,
@@ -126,7 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                // 旧密码验证通过 (或是走的邮箱重置通道)，正式更新密码
                 const { error: updateError } = await _supabase.auth.updateUser({
                     password: newPassword
                 });
@@ -147,9 +128,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // ==========================================
-    // 🛑 4. 拦截取消操作
-    // ==========================================
     const cancelBtn = document.getElementById('cancel-reset');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', async (e) => {
@@ -166,9 +144,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // ==========================================
-    // 👁️ 5. 密码小眼睛功能绑定
-    // ==========================================
     function setupPasswordToggle(inputId, iconId) {
         const inputField = document.getElementById(inputId);
         const toggleIcon = document.getElementById(iconId);
@@ -189,7 +164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 绑定所有的密码框
     setupPasswordToggle('upd-old-password', 'toggle-old-pwd');
     setupPasswordToggle('upd-password', 'toggle-pwd');
     setupPasswordToggle('upd-confirm', 'toggle-confirm');

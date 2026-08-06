@@ -9,10 +9,10 @@ export async function initDashboard() {
     const yearSelect = document.getElementById('filter-year');
     const monthSelect = document.getElementById('filter-month');
 
-    // 1. 初始加载数据
+    // initialize data
     await loadDashboardData(yearSelect.value, monthSelect.value);
 
-    // 2. 监听下拉框改变事件
+    // filter based on year and month
     yearSelect.addEventListener('change', async (e) => {
         await loadDashboardData(e.target.value, monthSelect.value);
     });
@@ -21,16 +21,16 @@ export async function initDashboard() {
         await loadDashboardData(yearSelect.value, e.target.value);
     });
 
-    // 3. 导出 PDF 功能 (隐身控制栏、坐标归零、横向导出)
+    // Export PDF
     document.getElementById('export-report-btn').addEventListener('click', () => {
         const element = document.querySelector('.dashboard-page');
         const headerArea = document.querySelector('.page-header');
         
-        // 截图前：暂时隐藏控制栏
+        // hide other layout
         if (headerArea) headerArea.style.display = 'none';
 
         html2pdf().set({
-            margin: [10, 0, 10, 0], // 四周留白 10mm
+            margin: [10, 0, 10, 0],
             filename: `Report_${yearSelect.value}_${monthSelect.value}.pdf`,
             image: { type: 'jpeg', quality: 1 },
             html2canvas: { 
@@ -41,13 +41,13 @@ export async function initDashboard() {
             }, 
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         }).from(element).save().then(() => {
-            // 截图后：立刻恢复控制栏显示
+            // redisplay the hidden layout
             if (headerArea) headerArea.style.display = 'flex';
         });
     });
 }
 
-// 📅 辅助函数：生成数据库查询所需的起止时间
+// function to get data from db
 function getDateRange(year, month) {
     let startDate, endDate;
     if (month === 'all') {
@@ -61,13 +61,12 @@ function getDateRange(year, month) {
     return { startDate, endDate };
 }
 
-// 🚀 核心派发器：从数据库抓取数据
 async function loadDashboardData(year, month) {
     console.log(`Fetching data from database for ${year}, ${month === 'all' ? 'All Year' : 'Month ' + month}...`);
     const { startDate, endDate } = getDateRange(year, month);
 
     try {
-        // --- 查询 1：获取时间段内的所有订单 (务必查询 status) ---
+        // get total order
         const { data: ordersData, error: orderErr } = await _supabase
             .from('orders') 
             .select('order_id, total_amount, created_at, status')
@@ -78,7 +77,7 @@ async function loadDashboardData(year, month) {
         const validOrders = ordersData || [];
         const orderIds = validOrders.map(o => o.order_id);
 
-        // --- 查询 2：获取新增用户数 ---
+        // get total new user
         const { count: usersCount, error: userErr } = await _supabase
             .from('profiles')
             .select('id', { count: 'exact', head: true }) 
@@ -87,7 +86,7 @@ async function loadDashboardData(year, month) {
 
         if (userErr) throw userErr;
 
-        // --- 查询 3：获取订单明细联表数据 ---
+        // get orders detail
         let orderItems = [];
         if (orderIds.length > 0) {
             const { data: itemsData, error: itemsErr } = await _supabase
@@ -112,7 +111,7 @@ async function loadDashboardData(year, month) {
             orderItems = itemsData || [];
         }
 
-        // 把真实数据交给渲染函数
+        // update data to render function
         updateKPIs(validOrders, usersCount || 0, orderItems);
         renderCharts(validOrders, orderItems, year, month);
 
@@ -122,24 +121,24 @@ async function loadDashboardData(year, month) {
     }
 }
 
-// 📊 更新顶部 KPI 卡片
+// function of display analytic data
 function updateKPIs(orders, usersCount, orderItems) {
-    // 🌟 核心：统一筛选已送达的订单
+    // filter order status === delivered
     const deliveredOrders = orders.filter(o => o.status && o.status.toLowerCase() === 'delivered');
     const deliveredOrderIds = deliveredOrders.map(o => o.order_id);
     const deliveredItems = orderItems.filter(item => deliveredOrderIds.includes(item.order_id));
 
-    // 1. Total Revenue (仅算送达)
+    // total Revenue
     const totalRevenue = deliveredOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
     document.getElementById('kpi-revenue').innerText = `RM ${totalRevenue.toFixed(2)}`;
 
-    // 2. Total Orders (仅算送达)
+    // total Orders
     document.getElementById('kpi-orders').innerText = `${deliveredOrders.length} Orders`;
 
-    // 3. New Users
+    // new Users
     document.getElementById('kpi-users').innerText = `+${usersCount} Users`;
 
-    // 4. 最热销产品 (仅算送达)
+    // hot sales product (based on quantity)
     const productSales = {};
     deliveredItems.forEach(item => {
         const fName = item.structure?.furniture?.furniture_name;
@@ -159,20 +158,18 @@ function updateKPIs(orders, usersCount, orderItems) {
     document.getElementById('kpi-hot-product').innerText = hotProduct;
 }
 
-// 📈 渲染图表
+// render function
 function renderCharts(orders, orderItems, year, month) {
-    // 销毁旧实例防止重叠
+
     if (salesChartInstance) salesChartInstance.destroy();
     if (categoryChartInstance) categoryChartInstance.destroy();
 
-    // 🌟 全局过滤已送达的数据
+    // filter status == delivered
     const deliveredOrders = orders.filter(o => o.status && o.status.toLowerCase() === 'delivered');
     const deliveredOrderIds = deliveredOrders.map(o => o.order_id);
     const deliveredItems = orderItems.filter(item => deliveredOrderIds.includes(item.order_id));
 
-    // ==========================================
-    // 1. 左侧：销售趋势线形图
-    // ==========================================
+    // sales trend
     let salesLabels = [];
     let salesData = [];
 
@@ -209,9 +206,7 @@ function renderCharts(orders, orderItems, year, month) {
         options: { responsive: true }
     });
 
-    // ==========================================
-    // 2. 右侧：分类圆饼图 (带有动态颜色和标签)
-    // ==========================================
+    // pie chart
     const categorySales = {};
     deliveredItems.forEach(item => {
         const cName = item.structure?.furniture?.type?.category?.category_name;
@@ -228,7 +223,7 @@ function renderCharts(orders, orderItems, year, month) {
         catData.push(1); 
     }
 
-    // 动态生成和谐饱满的 HSL 颜色
+    // generate color label
     function generateDynamicColors(count) {
         const colors = [];
         for (let i = 0; i < count; i++) {
@@ -252,7 +247,7 @@ function renderCharts(orders, orderItems, year, month) {
                 borderWidth: 2
             }]
         },
-        // 🌟 启用数据标签插件
+
         plugins: [ChartDataLabels], 
         options: { 
             responsive: true,
@@ -262,7 +257,6 @@ function renderCharts(orders, orderItems, year, month) {
                     font: { weight: 'bold', size: 11 },
                     textAlign: 'center', 
                     formatter: (value, context) => {
-                        // 如果是没数据的占位符，不显示文字
                         if (context.chart.data.labels[0] === 'No Sales') return '';
                         const labelName = context.chart.data.labels[context.dataIndex];
                         return labelName + '\n' + value;

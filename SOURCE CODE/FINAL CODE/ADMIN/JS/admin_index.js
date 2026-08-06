@@ -6,13 +6,12 @@ import { initFeedback } from './components/feedback.js';
 
 const mainContent = document.getElementById('main-content');
 
-// ==========================================
-// 🛡️ 1. 路由守卫：检查身份验证
-// ==========================================
+// check authentication
 async function checkAuth() {
     try {
         const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
 
+        // if no session, back to login page
         if (sessionError || !session) {
             window.location.href = 'admin_login.html'; 
             return;
@@ -33,14 +32,13 @@ async function checkAuth() {
             return;
         }
 
-        // D. 身份完全合法！揭开黑布（恢复显示）
         document.body.style.display = 'flex'; 
         
-        // 🌟 记忆功能 1：读取缓存的页面，如果没有（第一次登入）就默认进 dashboard
+        // display the page view last time
         const savedPage = localStorage.getItem('admin_current_page') || 'dashboard';
         loadContent(savedPage);
 
-        // 🌟 记忆功能 2：自动帮你把侧边栏的高亮光标移到对应的按钮上
+        // active the aside button for current page
         document.querySelectorAll('.menu-item').forEach(el => {
             el.classList.remove('active');
             if (el.getAttribute('data-page') === savedPage) {
@@ -49,23 +47,21 @@ async function checkAuth() {
         });
 
     } catch (error) {
-        console.error("身份验证过程中出错:", error);
+        console.error("Identity error:", error);
         window.location.href = 'admin_login.html';
     }
 }
 
-// ==========================================
-// ⚙️ 2. 内容加载与切换逻辑
-// ==========================================
+// page loading 
 async function loadContent(pageName) {
     try {
-        // 🌟 记忆功能 3：每次成功进入新页面，都把页面名字存入本地缓存
+        // save page info to local
         localStorage.setItem('admin_current_page', pageName);
 
-        mainContent.innerHTML = "<p style='padding:20px;'>加载中...</p>"; 
+        mainContent.innerHTML = "<p style='padding:20px;'>Loading...</p>"; 
         
         const response = await fetch(`../HTML/components/${pageName}.html`);
-        if (!response.ok) throw new Error("页面加载失败");
+        if (!response.ok) throw new Error("Fail to load!");
         
         const html = await response.text();
         mainContent.innerHTML = html;
@@ -86,10 +82,6 @@ async function loadContent(pageName) {
     }
 }
 
-// ==========================================
-// 🖱️ 3. 事件监听器绑定
-// ==========================================
-
 window.addEventListener('DOMContentLoaded', () => {
     checkAuth();
 });
@@ -108,7 +100,7 @@ document.querySelectorAll('.menu-item').forEach(item => {
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
-        // 🌟 记忆功能 4：退出登录时，清空页面记忆，确保下次登录时从 dashboard 开始
+        // clear local storage
         localStorage.removeItem('admin_current_page');
         
         await _supabase.auth.signOut();

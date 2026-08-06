@@ -13,7 +13,6 @@ export async function initProductList(params) {
     gridElem.innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#7f8c8d;'>Gathering exquisite furniture items...</p>";
 
     try {
-        // 移除了 structure 中的 stock 字段，优化查询
         let query = _supabase.from('furniture').select(`
             furniture_id,
             furniture_name,
@@ -60,8 +59,7 @@ export async function initProductList(params) {
                 transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
                 display: flex; flex-direction: column;
             `;
-
-            // 🌟 移除了 stockHtml 变量及其对应的 div
+            
             productCard.innerHTML = `
                 <div style="width:100%; height:240px; background:#f7fafc; overflow:hidden; position:relative;">
                     <img src="${imgUrl}" alt="${fur.furniture_name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png'">

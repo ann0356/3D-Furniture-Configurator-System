@@ -1,23 +1,15 @@
 <style>
-  /* ── Reset scoped to planner ── */
+  /* Reset scoped to planner */
   .rp-root *, .rp-root *::before, .rp-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
   .rp-root { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: #1e293b; }
 
-  /* ── Layout ── */
+  /* Layout */
   .rp-root          { display: flex; flex-direction: column; height: 85vh; background: #f8fafc; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
   .rp-topbar        { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 18px; background: #ffffff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
-  
-  /* ── 整个下半部容器：如果内容超出，允许出现横向滚动条保护画布 ── */
   .rp-body          { display: flex; flex: 1; overflow-x: auto; overflow-y: hidden; }
-
-  /* ── 画布包裹列：严格控制占用屏幕 70%，并设有最小宽度 ── */
   .rp-canvas-wrap   { flex: 0 0 70%; width: 70%; min-width: 600px; display: flex; flex-direction: column; overflow: hidden; }
-  
-  /* ── 画布本身：居中显示并附带精美留白阴影 ── */
   .rp-canvas        { flex: 1; background: #e2e8f0; position: relative; margin: 15px 20px 20px 20px; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; }
   .rp-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
-  
-  /* ── 剩余的 30% 留给侧边栏，同样设有最小宽度保护 ── */
   .rp-sidebar       { flex: 0 0 30%; width: 30%; min-width: 280px; display: flex; flex-direction: column; background: #ffffff; border-left: 1px solid #e2e8f0; overflow: hidden; }
 
   /* ── Top bar groups ── */
@@ -40,7 +32,7 @@
   .rp-btn-red       { background: #ef4444; color: #fff; }
   .rp-btn-ghost     { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-  /* ── 悬浮视角控制器 (Floating Camera Controls) ── */
+  /* Floating Camera Controls */
   .canvas-camera-controls {
     position: absolute; top: 25px; right: 30px; display: flex; gap: 6px; z-index: 10;
     background: rgba(255, 255, 255, 0.85); padding: 6px; border-radius: 8px;
@@ -52,17 +44,17 @@
   }
   .canvas-camera-controls .rp-btn-view:hover { background: #e2e8f0; color: #0f172a; }
 
-  /* ── Status bar ── */
+  /*  Status bar  */
   .rp-statusbar     { padding: 7px 14px; font-size: 12px; font-weight: 500; border-top: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; min-height: 32px; }
   #room-status      { display: none; }
   #selection-info   { display: none; margin-left: auto; font-size: 12px; color: #6366f1; font-weight: 600; }
 
-  /* ── Sidebar Header & Filters ── */
+  /*  Sidebar Header & Filters  */
   .rp-sidebar-header{ padding: 14px 16px 10px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
   .rp-sidebar-header h3 { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
   .rp-filter-group  { display: flex; flex-direction: column; gap: 8px; }
 
-  /* ── Furniture cards (Column Layout) ── */
+  /*  Furniture cards (Column Layout)  */
   #room-furniture-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; scrollbar-width: thin; }
   .furniture-card   { display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; cursor: grab; position: relative; transition: all .15s; background: #fafafa; }
   .furniture-card:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241,.1); background: #ffffff; }
@@ -75,10 +67,10 @@
   .btn-add-furn     { width: 24px; height: 24px; border-radius: 6px; border: none; background: #e0e7ff; color: #4338ca; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
   .furniture-card:hover .btn-add-furn { background: #6366f1; color: #fff; }
 
-  /* ── Drop zone hint ── */
+  /*  Drop zone hint  */
   .rp-canvas.drag-over::after { content: 'Drop here'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #6366f1; background: rgba(99,102,241,.08); border: 3px dashed #6366f1; border-radius: 12px; pointer-events: none; z-index: 20;}
 
-  /* ── Hint bar ── */
+  /*  Hint bar  */
   .rp-hint { padding: 10px 14px; font-size: 13px; color: #4338ca; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 8px; flex-shrink: 0; line-height: 1.4; }
   .rp-hint b { color: #312e81; }
 </style>

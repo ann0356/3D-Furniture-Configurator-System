@@ -2,13 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
-// 🌟 核心新增：引入官方数学生成的室内影棚环境，用来完美还原 0.5 Roughness 材质
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'; 
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js'; 
 
 let scene, camera, renderer, orbitControls, transformControls;
 let floorMesh, gridHelper, wallLines = [];
-// --- Catalog State for Filters ---
 let fullCatalogData = [];
 let allCategories = [];
 let allTypes = [];
@@ -49,53 +47,33 @@ function _initThree(container) {
     const h = container.clientHeight;
     camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
     
-    // ========================================================
-    // 🌟 渲染引擎升级：完美对齐 Blender PBR (物理渲染) 设定
-    // ========================================================
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(w, h);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 开启高级柔和阴影
-
-    // 关键修正 A：开启 sRGB 色彩空间，彻底解决家具颜色发灰、褪色问题
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace; 
-    
-    // 关键修正 B：使用 ACESFilmic 色调映射，对应 Blender 默认的 Filmic 模式，保留高光与暗部细节
     renderer.toneMapping = THREE.ACESFilmicToneMapping; 
     renderer.toneMappingExposure = 1.0; // 基础曝光度
 
-    // 关键修正 C：动态生成 PBR 专属的全局环境反射，给 0.5 粗糙度提供反射源
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    // ========================================================
-
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // ========================================================
-    // 💡 影棚级物理灯光组合（环境光 + 半球光 + 高精主光源）
-    // ========================================================
-    // 半球光：模拟微妙的天空与地面映射，强化 3D 立体感
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
-
-    // 环境光：微调暗部，防止产生绝对死黑的阴影
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-    // 方向主光源：投射真实阴影并打出表面微光
     const dir = new THREE.DirectionalLight(0xffffff, 0.9);
     dir.position.set(8, 15, 8);
     dir.castShadow = true;
-    dir.shadow.mapSize.width = 2048; // 提升阴影贴图分辨率，消除锯齿
+    dir.shadow.mapSize.width = 2048;
     dir.shadow.mapSize.height = 2048;
-    dir.shadow.bias = -0.0005; // 消除模型表面产生的网格状阴影纹波
+    dir.shadow.bias = -0.0005;
     scene.add(dir);
 
-    // ========================================================
-    // 🕹️ 控制器与交互绑定
-    // ========================================================
     orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.enableDamping = true;
     orbitControls.dampingFactor = 0.08;
@@ -249,7 +227,7 @@ async function _loadFurnitureLibrary() {
         _renderFurnitureList();
 
     } catch (err) {
-        console.error("加载目录失败:", err);
+        console.error("Fail to load library:", err);
         list.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Load Error: ${err.message}</div>`;
     }
 }
@@ -349,34 +327,23 @@ function _addFurnitureToRoom(modelUrl, structureId, position = new THREE.Vector3
     _showStatus('Loading model…', 'info');
     gltfLoader.load(modelUrl, (gltf) => {
         const model = gltf.scene;
-        
-        // 🌟 核心修改：尊重真实比例 + 智能防错单位转换
-        // ========================================================
+
         if (scale) {
-            // 场景 A: 读取已保存的房间，尊重用户之前的自定义缩放
             model.scale.set(scale.x, scale.y, scale.z);
         } else {
-            // 场景 B: 新拖入家具。默认使用 1:1 原始比例！
             model.scale.setScalar(1.0); 
 
-            // 🛡️ 智能防错机制：
-            // 如果你的模型在导出时不小心用了厘米 (cm) 或毫米 (mm) 作为单位
-            // 比如一个沙发长度变成了 200 个单位 (本来应该是 2.0)
             const tempBox = new THREE.Box3().setFromObject(model);
             const size = new THREE.Vector3();
             tempBox.getSize(size);
             const maxDim = Math.max(size.x, size.y, size.z);
             
             if (maxDim > 10) {
-                // 如果发现这件家具的最大边居然超过了 10 米长！
-                // 大概率是单位搞错了（厘米当成了米）。我们自动把它缩小 100 倍。
                 console.warn(`Model ${structureId} is unusually large (${maxDim} units). Auto-scaling down by 100x to convert cm to meters.`);
                 model.scale.setScalar(0.01); 
             }
         }
-        // ========================================================
 
-        // 重新计算缩放后的底部位置
         const box = new THREE.Box3().setFromObject(model);
         model.position.y = -box.min.y; 
 
@@ -538,7 +505,7 @@ async function _handleAddToCart() {
             user_id: currentUserId 
         });
         if (createErr) {
-            console.error("创建购物车失败:", createErr);
+            console.error("Fail to create new cart:", createErr);
             return _showStatus('Failed to create new cart.', 'error');
         }
     }
@@ -555,7 +522,7 @@ async function _handleAddToCart() {
 
     const { error: insertErr } = await _supabase.from('cart_item').insert(inserts);
     if (insertErr) {
-        console.error("插入购物车详情失败:", insertErr);
+        console.error("Fail to insert cart:", insertErr);
         return _showStatus('Cart Error: ' + insertErr.message, 'error');
     }
 

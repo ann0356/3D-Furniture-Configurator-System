@@ -2,9 +2,8 @@ import { _supabase } from '../../../SUPABASE/supabase_admin_conn.js';
 
 export async function initFeedback() {
     const tbody = document.getElementById('feedback-tbody');
-    let isInitialized = tbody.dataset.initialized;  // ✅ 防止重复绑定事件
+    let isInitialized = tbody.dataset.initialized;
 
-    // ── 渲染 ──────────────────────────────────────────
     async function fetchMessages() {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;">Loading...</td></tr>`;
 
@@ -40,18 +39,17 @@ export async function initFeedback() {
                 <td>
                     ${msg.status === 'unread'
                         ? `<button class="btn-action mark-read-btn" data-id="${msg.id}">Mark Read</button>`
-                        : `<span style="color:#ccc;font-size:12px;">Read</span>`}  <!-- ✅ 统一用 "Read" -->
+                        : `<span style="color:#ccc;font-size:12px;">Read</span>`}
                 </td>
             </tr>
         `).join('');
     }
 
-    // ── 事件委托（只绑定一次）──────────────────────────
     if (!isInitialized) {
-        tbody.dataset.initialized = 'true';  // ✅ 标记已绑定
+        tbody.dataset.initialized = 'true';
 
         tbody.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.mark-read-btn');  // ✅ 更稳健，点到子元素也能匹配
+            const btn = e.target.closest('.mark-read-btn');
             if (!btn) return;
 
             const id = btn.dataset.id;
@@ -62,7 +60,7 @@ export async function initFeedback() {
                 .from('contact_messages')
                 .update({ status: 'read' })
                 .eq('id', id)
-                .select(); // ✅ 加上 .select() 才能看到实际影响了哪些行
+                .select();
 
             console.log('id being used:', id, typeof id);
             console.log('updated rows:', data);
@@ -71,7 +69,7 @@ export async function initFeedback() {
             if (error) {
                 console.error(error);
                 btn.textContent = 'Error ✕';
-                btn.disabled = false;  // ✅ 出错后允许重试
+                btn.disabled = false;
             } else {
                 fetchMessages();
             }

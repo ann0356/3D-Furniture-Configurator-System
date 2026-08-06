@@ -1,13 +1,13 @@
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js';
 import { loadCustomerContent } from '../script.js';
 
-let rawVariants = [];         // 存放当前 Furniture 旗下的所有原始 SKU 数据
-let uniqueStructureNames = [];// 款式名字集合 (去重)
-let uniqueColours = [];       // 颜色名字集合 (去重)
+let rawVariants = [];
+let uniqueStructureNames = [];
+let uniqueColours = [];
 
-let activeStructureName = ''; // 当前选中的款式
-let activeColour = '';        // 当前选中的颜色
-let displayMode = '2d';       // 视图模式 ('2d' 或 '3d')
+let activeStructureName = '';
+let activeColour = '';
+let displayMode = '2d';
 
 export async function initProductDetails(params) {
     console.log("Loading Product Details for Furniture ID:", params.id);
@@ -60,8 +60,7 @@ export async function initProductDetails(params) {
 
         bindViewModeToggles();
         bind3DAngleControls();
-        
-        // 🌟 初始化数量加减器和灯箱交互
+
         bindQuantityControls();
         bindLightboxControls();
 
@@ -80,15 +79,11 @@ export async function initProductDetails(params) {
     }
 }
 
-// ==========================================
-// 🕹️ 控制台交互按钮渲染
-// ==========================================
 function refreshSelectionPanels() { 
     renderStructureButtons();
     renderColourButtons();
     updateMediaAndPricing();
-    
-    // 每次切换商品重置数量为 1
+
     const qtyInput = document.getElementById('pd-quantity');
     if(qtyInput) qtyInput.value = 1;
 }
@@ -193,29 +188,22 @@ function updateMediaAndPricing() {
     
     if (imgElem) imgElem.src = exactSKU.image_url || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png';
     
- // 👇 🌟 完美同步 Blender Material Preview 设定 👇
     if (modelElem) {
         modelElem.src = exactSKU.model_url || '';
         
-        // 1. 必须移除 neutral！让模型重新获得环境光反射（消除黑屏）
         modelElem.removeAttribute('environment-image'); 
-        
-        // 2. 匹配 Blender 默认的 Filmic 色彩映射
+
         modelElem.setAttribute('tone-mapping', 'aces'); 
-        
-        // 3. Material Preview 的光照比较充足，曝光设为 1.0 或 1.2
+
         modelElem.setAttribute('exposure', '1.0'); 
-        
-        // 4. 加上柔和的环境光遮蔽阴影，增加落地感
+
         modelElem.setAttribute('shadow-intensity', '1'); 
         modelElem.setAttribute('shadow-softness', '0.8'); 
     }
 
     applyMediaViewMode(exactSKU.model_url);
 }
-// ==========================================
-// 💡 数量选择器 & 灯箱 (Lightbox) 控制
-// ==========================================
+
 function bindQuantityControls() {
     const btnMinus = document.getElementById('btn-qty-minus');
     const btnPlus = document.getElementById('btn-qty-plus');
@@ -240,11 +228,6 @@ function bindQuantityControls() {
     }
 }
 
-// ==========================================
-// 💡 数量选择器 & 灯箱 (Lightbox) 控制
-// ==========================================
-// ... (保留上方的 bindQuantityControls 不变) ...
-
 function bindLightboxControls() {
     const mainImg = document.getElementById('display-image');
     const lightbox = document.getElementById('pd-lightbox');
@@ -252,20 +235,17 @@ function bindLightboxControls() {
     const closeBtn = document.getElementById('pd-lightbox-close');
 
     if (mainImg && lightbox && lightboxImg) {
-        
-        // 👇 🌟 核心优化：直接用 JS 强制让放大后的图片占据屏幕的 90%！ 👇
-        lightboxImg.style.maxWidth = '90vw';    // 最大宽度为屏幕宽度的 90%
-        lightboxImg.style.maxHeight = '90vh';   // 最大高度为屏幕高度的 90%
-        lightboxImg.style.objectFit = 'contain';// 保持图片原本比例，绝不拉伸变形
-        lightboxImg.style.borderRadius = '8px'; // 顺便加个圆角，让边缘更好看
-        // 👆 ========================================================= 👆
+        lightboxImg.style.maxWidth = '90vw';
+        lightboxImg.style.maxHeight = '90vh';
+        lightboxImg.style.objectFit = 'contain';
+        lightboxImg.style.borderRadius = '8px';
 
         mainImg.onclick = () => {
-            if (displayMode === '2d') { // 只有在 2D 图片模式才允许放大
+            if (displayMode === '2d') {
                 lightboxImg.src = mainImg.src;
                 lightbox.style.display = 'flex';
-                lightbox.style.alignItems = 'center';    // 确保绝对居中
-                lightbox.style.justifyContent = 'center';// 确保绝对居中
+                lightbox.style.alignItems = 'center';
+                lightbox.style.justifyContent = 'center';
             }
         };
 
@@ -274,7 +254,6 @@ function bindLightboxControls() {
         if (closeBtn) closeBtn.onclick = closeLightbox;
         
         lightbox.onclick = (e) => {
-            // 确保点击图片本身不会关闭，只有点击黑底才会关闭
             if (e.target === lightbox) closeLightbox(); 
         };
         
@@ -284,9 +263,6 @@ function bindLightboxControls() {
     }
 }
 
-// ==========================================
-// 📺 3D 核心：角度操控引擎与 Toggle 样式渲染
-// ==========================================
 function bindViewModeToggles() {
     const btn2d = document.getElementById('btn-mode-2d');
     const btn3d = document.getElementById('btn-mode-3d');
@@ -374,9 +350,6 @@ function applyMediaViewMode(currentModelUrl) {
     }
 }
 
-// ==========================================
-// 🛒 购物车引擎：处理加入购物车逻辑 (带数量提取)
-// ==========================================
 async function handleAddToCart() {
     try {
         const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
@@ -399,7 +372,6 @@ async function handleAddToCart() {
             return;
         }
 
-        // 🌟 提取用户选择的数量
         const qtyInput = document.getElementById('pd-quantity');
         const qtyToAdd = parseInt(qtyInput ? qtyInput.value : 1) || 1;
 
@@ -413,7 +385,6 @@ async function handleAddToCart() {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:white; margin-right:8px;"></i> Adding...';
         btn.disabled = true;
 
- // 👇 替换这部分代码 👇
         let cartId;
         let { data: cartData, error: cartError } = await _supabase
             .from('cart')
@@ -422,12 +393,10 @@ async function handleAddToCart() {
             .maybeSingle();
 
         if (cartError) {
-            // 如果有真正的数据库报错，直接抛出
             throw cartError;
         }
 
         if (!cartData) {
-            // 🌟 核心修复：如果没找到购物车 (cartData 为 null)，直接新建！
             cartId = 'CART-' + Date.now(); 
             const { error: insertCartError } = await _supabase
                 .from('cart')
@@ -436,11 +405,9 @@ async function handleAddToCart() {
             if (insertCartError) throw insertCartError;
             console.log("New cart created:", cartId);
         } else {
-            // 如果找到了购物车，直接获取它的 ID
             cartId = cartData.cart_id;
             console.log("Using existing cart:", cartId);
         }
-        // 👆 替换这部分代码 👆
 
         const { data: existingItem, error: checkItemError } = await _supabase
             .from('cart_item')
@@ -455,21 +422,17 @@ async function handleAddToCart() {
         }
 
         if (existingItem) {
-            // 🌟 累加用户选择的数量
             const newQty = Number(existingItem.quantity) + qtyToAdd;
 
-            // 👇 🌟 核心修复：双重库存校验，防止购物车总数超过实际库存 👇
             if (newQty > Number(exactSKU.stock)) {
                 alert(`Sorry, you cannot add ${qtyToAdd} more. We only have ${exactSKU.stock} in stock, and you already have ${existingItem.quantity} in your cart.`);
                 
-                // 因为报错阻断了流程，所以要手动把按钮的状态恢复过来
                 btn.style.background = "#1e2937";
                 btn.innerHTML = '<i class="fa-solid fa-cart-plus" style="color:white; margin-right:8px;"></i> Add to Cart';
                 btn.disabled = false;
                 
-                return; // 必须 return，彻底终止后续向数据库发起的 Update 操作
+                return;
             }
-            // 👆 ========================================================= 👆
 
             const { error: updateError } = await _supabase
                 .from('cart_item')
@@ -479,7 +442,6 @@ async function handleAddToCart() {
             if (updateError) throw updateError;
             
         } else {
-            // ... 下面就是原有的 else { (新建 cartItemId...) } 的逻辑，保持不变
             const cartItemId = 'CITEM-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
             const { error: insertItemError } = await _supabase
                 .from('cart_item')
@@ -487,7 +449,7 @@ async function handleAddToCart() {
                     cart_item_id: cartItemId, 
                     cart_id: cartId, 
                     structure_id: exactSKU.structure_id,
-                    quantity: qtyToAdd // 🌟 存入用户指定的数量
+                    quantity: qtyToAdd
                 }]);
             if (insertItemError) throw insertItemError;
         }

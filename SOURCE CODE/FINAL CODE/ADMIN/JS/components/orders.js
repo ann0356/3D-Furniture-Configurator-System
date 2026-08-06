@@ -37,7 +37,7 @@ function bindEvents() {
         filterAndRenderOrders();
     });
 
-    // 🌟 弹窗关闭逻辑
+    // close panel with click any area except the panel area
     document.getElementById('ao-modal-close')?.addEventListener('click', () => {
         document.getElementById('ao-modal-overlay').style.display = 'none';
     });
@@ -103,6 +103,11 @@ function renderTable(dataArray) {
         const customerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Guest';
         const currentStatus = (order[COL_STATUS] || 'order placed').toLowerCase();
 
+        // check lock the selection or not
+        const isLocked = currentStatus === 'delivered' || currentStatus === 'cancelled';
+        const disabledAttr = isLocked ? 'disabled' : '';
+        const cursorStyle = isLocked ? 'cursor: not-allowed; opacity: 0.8;' : 'cursor: pointer;';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${orderId}</strong></td>
@@ -110,7 +115,7 @@ function renderTable(dataArray) {
             <td>${customerName}</td>
             <td style="font-weight: bold;">RM ${Number(order[COL_TOTAL]).toFixed(2)}</td>
             <td>
-                <select class="status-select" data-id="${orderId}" style="${getStatusStyle(currentStatus)}">
+                <select class="status-select" data-id="${orderId}" style="${getStatusStyle(currentStatus)} ${cursorStyle}" ${disabledAttr}>
                     <option value="order placed" ${currentStatus === 'order placed' ? 'selected' : ''}>Order Placed</option>
                     <option value="delivered" ${currentStatus === 'delivered' ? 'selected' : ''}>Delivered</option>
                     <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -121,8 +126,10 @@ function renderTable(dataArray) {
             </td>
         `;
 
-        // 🌟 绑定状态更新
-        tr.querySelector('.status-select').addEventListener('change', (e) => handleStatusChange(e, orderId));
+        // only no locked can be change
+        if (!isLocked) {
+            tr.querySelector('.status-select').addEventListener('change', (e) => handleStatusChange(e, orderId));
+        }
         
         // 🌟 核心：绑定详情弹窗
         tr.querySelector('.view-detail-btn').addEventListener('click', () => openOrderDetail(order));
@@ -131,12 +138,12 @@ function renderTable(dataArray) {
     });
 }
 
-// ─── 7. 核心功能：打开详情弹窗 ───
+// detail panel funciton
 async function openOrderDetail(order) {
     const overlay = document.getElementById('ao-modal-overlay');
     const itemsBody = document.getElementById('modal-items-body');
     
-    // 1. 立即填入已有的客户基础信息
+    // get data of user
     document.getElementById('modal-order-id').innerText = `Details for Order: ${order.order_id}`;
     const p = order.profiles || {};
     document.getElementById('modal-cust-name').innerText = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Guest Customer';
@@ -145,12 +152,12 @@ async function openOrderDetail(order) {
     document.getElementById('modal-cust-address').innerText = p.address || 'No shipping address provided';
     document.getElementById('modal-grand-total').innerText = `RM ${Number(order.total_amount).toFixed(2)}`;
 
-    // 2. 显示 Loading 状态
+    // loading....
     itemsBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">Loading items...</td></tr>`;
     overlay.style.display = 'flex';
 
     try {
-        // 3. 联表查询该订单的所有明细商品
+        // check order item
         const { data: items, error } = await _supabase
             .from('order_item')
             .select(`
@@ -164,7 +171,7 @@ async function openOrderDetail(order) {
 
         if (error) throw error;
 
-        // 4. 渲染商品明细
+        // render 
         itemsBody.innerHTML = '';
         if (!items || items.length === 0) {
             itemsBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">No items found.</td></tr>`;
@@ -202,19 +209,18 @@ async function handleStatusChange(event, orderId) {
 
     const confirmUpdate = confirm(`Change status to "${newStatus.toUpperCase()}"?`);
     if (!confirmUpdate) {
-        event.target.value = oldStatus; // 恢复下拉框原本的选项
+        event.target.value = oldStatus;
         return;
     }
-    
-    // 禁用下拉框防止重复点击
+
     event.target.disabled = true;
 
     try {
-        // 👇 🌟 核心修复：如果管理员改为了 cancelled，且之前不是 cancelled，立刻退还库存 👇
+        // status update: cancelled order, restore stock
         if (newStatus === 'cancelled' && oldStatus !== 'cancelled') {
             console.log(`[Admin] Cancelling order ${orderId}, initiating stock restoration...`);
             
-            // 1. 查出这个订单里的所有商品
+            // check item
             const { data: orderItems, error: itemsErr } = await _supabase
                 .from('order_item')
                 .select('structure_id, quantity')
@@ -222,7 +228,6 @@ async function handleStatusChange(event, orderId) {
 
             if (itemsErr) throw itemsErr;
 
-            // 2. 遍历退还库存
             if (orderItems && orderItems.length > 0) {
                 for (const item of orderItems) {
                     const { data: liveStruct } = await _supabase
@@ -243,26 +248,31 @@ async function handleStatusChange(event, orderId) {
                 }
             }
         }
-        // 👆 ========================================================================= 👆
 
-        // 更新订单状态
+        // update status
         const { error } = await _supabase.from(TABLE_ORDER).update({ status: newStatus }).eq(COL_ORDER_ID, orderId);
         if (error) throw error;
         
-        // 更新本地数据和UI
+        // update data and UI
         if (order) order.status = newStatus;
-        event.target.style.cssText = getStatusStyle(newStatus);
+        event.target.style.cssText = getStatusStyle(newStatus) + ' cursor: not-allowed; opacity: 0.8;';
         
         if (newStatus === 'cancelled') {
-            alert("Order cancelled successfully. Stock has been restored.");
+            alert("Order cancelled successfully. Stock has been restored and status is now locked.");
+        } else if (newStatus === 'delivered') {
+            alert("Order marked as delivered successfully. Status is now locked.");
         }
 
     } catch (err) {
         console.error("Status Update Error:", err);
         alert("Update failed. Please check the console for details.");
-        event.target.value = oldStatus; // 失败时恢复下拉框
+        event.target.value = oldStatus;
     } finally {
-        event.target.disabled = false;
+        // if status == cancel || delivered, lock the selection
+        const finalStatus = event.target.value.toLowerCase();
+        if (finalStatus !== 'delivered' && finalStatus !== 'cancelled') {
+            event.target.disabled = false;
+        }
     }
 }
 

@@ -8,27 +8,18 @@ export async function initProfile(params) {
     console.log("Initializing Profile Page...");
 
     try {
-        // 1. 验证用户登录状态
         const { data: { session } } = await _supabase.auth.getSession();
         if (!session) {
             alert("Please login to view your profile.");
-            // 🌟 终极修复：直接跳回独立登录页，绝不使用 SPA 引擎加载 HTML
             window.location.href = 'cus_login.html'; 
-            return; // 必须 return，阻止下面拉取数据的代码执行！
+            return;
         }
         
         const userId = session.user.id;
 
-        // 2. 获取并渲染个人资料
         await fetchAndRenderProfile(userId);
-
-        // 3. 绑定更新按钮事件
         document.getElementById('btn-update-profile').onclick = () => updateProfile(userId);
-
-        // 4. 获取并分类渲染订单列表
         await fetchOrders(userId);
-
-        // 5. 绑定订单 Tabs 切换事件
         bindOrderTabs();
 
     } catch (err) {
@@ -37,9 +28,6 @@ export async function initProfile(params) {
     }
 }
 
-// ==========================================
-// 👤 个人资料管理
-// ==========================================
 async function fetchAndRenderProfile(userId) {
     const { data, error } = await _supabase
         .from('profiles')
@@ -50,7 +38,6 @@ async function fetchAndRenderProfile(userId) {
     if (error) throw error;
     currentUserInfo = data;
 
-    // 填充表单
     document.getElementById('prof-email').value = data.email || '';
     document.getElementById('prof-fname').value = data.first_name || '';
     document.getElementById('prof-lname').value = data.last_name || '';
@@ -99,11 +86,7 @@ async function updateProfile(userId) {
     }
 }
 
-// ==========================================
-// 📦 订单抓取与渲染 (核心：还原 Snapshot 快照)
-// ==========================================
 async function fetchOrders(userId) {
-    // 联表查询 orders 和 旗下的 order_item
     const { data: orders, error } = await _supabase
         .from('orders')
         .select(`
@@ -120,14 +103,13 @@ async function fetchOrders(userId) {
     }
 
     allOrders = orders || [];
-    renderOrdersList('active'); // 默认展示 Active Orders
+    renderOrdersList('active');
 }
 
 function renderOrdersList(viewType) {
     const container = document.getElementById('orders-container');
     container.innerHTML = '';
 
-    // 过滤逻辑：Active (order placed) vs History (cancelled / delivered)
     const filteredOrders = allOrders.filter(o => {
         const status = (o.status || '').toLowerCase();
         if (viewType === 'active') {
@@ -146,14 +128,12 @@ function renderOrdersList(viewType) {
     }
 
     filteredOrders.forEach(order => {
-        // 状态徽章颜色
-        let statusColor = "#3b82f6"; // 默认蓝色
+        let statusColor = "#3b82f6";
         if (order.status.toLowerCase() === 'delivered') statusColor = "#2ecc71"; // 绿
         if (order.status.toLowerCase() === 'cancelled') statusColor = "#e74c3c"; // 红
 
         const formattedDate = new Date(order.created_at).toLocaleDateString('en-MY', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-        // 生成这个订单下的商品 HTML (读取 snapshot_info)
         let itemsHtml = '';
         order.order_item.forEach(item => {
             const snap = item.snapshot_info || {};
@@ -171,7 +151,6 @@ function renderOrdersList(viewType) {
             `;
         });
 
-        // 🌟 动态生成“取消按钮”：只有在 Active 状态 (order placed) 才会出现
         let actionBtnHtml = '';
         if (order.status.toLowerCase() === 'order placed') {
             actionBtnHtml = `
@@ -181,7 +160,6 @@ function renderOrdersList(viewType) {
             `;
         }
 
-        // 拼接整个订单卡片
         const orderCard = document.createElement('div');
         orderCard.style.cssText = "background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);";
         orderCard.innerHTML = `
@@ -205,16 +183,12 @@ function renderOrdersList(viewType) {
         container.appendChild(orderCard);
     });
 
-    // 🌟 为所有刚刚生成的 Cancel 按钮绑定点击事件
     const cancelBtns = document.querySelectorAll('.btn-cancel-order');
     cancelBtns.forEach(btn => {
         btn.addEventListener('click', handleCancelOrder);
     });
 }
 
-// ==========================================
-// 🖱️ Tabs 切换逻辑
-// ==========================================
 function bindOrderTabs() {
     const tabActive = document.getElementById('tab-active');
     const tabHistory = document.getElementById('tab-history');
@@ -237,14 +211,10 @@ function bindOrderTabs() {
     };
 }
 
-// ==========================================
-// ❌ 取消订单功能 (已修复：同步退还库存)
-// ==========================================
 async function handleCancelOrder(event) {
     const btn = event.target;
     const orderId = btn.getAttribute('data-id');
 
-    // 增加弹窗确认，防止误触
     if (!confirm("Are you sure you want to cancel this order? This action cannot be undone.")) {
         return;
     }
@@ -253,7 +223,6 @@ async function handleCancelOrder(event) {
     btn.innerText = "Cancelling...";
 
     try {
-        // 👇 🌟 核心修复 1：在取消订单前，先把这个订单里的商品全部查出来 👇
         const { data: orderItems, error: itemsErr } = await _supabase
             .from('order_item')
             .select('structure_id, quantity')
@@ -261,10 +230,8 @@ async function handleCancelOrder(event) {
 
         if (itemsErr) throw itemsErr;
 
-        // 👇 🌟 核心修复 2：遍历商品，把扣掉的库存还给数据库 👇
         if (orderItems && orderItems.length > 0) {
             for (const item of orderItems) {
-                // 1. 去查这个商品现在仓库里还剩多少
                 const { data: liveStruct } = await _supabase
                     .from('structure')
                     .select('stock')
@@ -272,10 +239,8 @@ async function handleCancelOrder(event) {
                     .single();
 
                 if (liveStruct) {
-                    // 2. 原有库存 + 这个订单退回的数量
                     const newStock = Number(liveStruct.stock || 0) + Number(item.quantity);
-                    
-                    // 3. 写回数据库
+
                     await _supabase
                         .from('structure')
                         .update({ stock: newStock })
@@ -285,23 +250,18 @@ async function handleCancelOrder(event) {
                 }
             }
         }
-        // 👆 ======================================================= 👆
 
-        // 3. 把订单状态改成 cancelled
         const { error: updateErr } = await _supabase
             .from('orders')
             .update({ status: 'cancelled' })
             .eq('order_id', orderId);
 
         if (updateErr) throw updateErr;
-
-        // 成功反馈
         alert("Order cancelled successfully, and stock has been restored.");
 
-        // 🌟 重新获取最新订单数据并刷新页面！
         const { data: { session } } = await _supabase.auth.getSession();
         if (session) {
-            await fetchOrders(session.user.id); // 重新拉取数据，订单自动跳去 History
+            await fetchOrders(session.user.id);
         }
 
     } catch (err) {

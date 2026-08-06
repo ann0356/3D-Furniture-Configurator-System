@@ -1,17 +1,13 @@
 import { _supabase } from '../../SUPABASE/supabase_admin_conn.js';
 
-// 🌟 变动 1：给 DOMContentLoaded 加上 async，以便我们能在一开局就使用 await 检查登录状态
 window.addEventListener('DOMContentLoaded', async () => {
 
-    // ==========================================
-    // 🛡️ 第一招：Auth Guard (防反弹拦截)
-    // ==========================================
     try {
-        // 1. 检查浏览器本地是否已经有 Session (登录凭证)
+        // check session of login
         const { data: { session } } = await _supabase.auth.getSession();
         
         if (session) {
-            // 2. 如果有凭证，为了安全起见，再次确认他是不是 admin
+            // check session == admin
             const { data: profile } = await _supabase
                 .from('profiles')
                 .select('role')
@@ -19,11 +15,11 @@ window.addEventListener('DOMContentLoaded', async () => {
                 .single();
 
             if (profile && profile.role === 'superadmin') {
-                // 如果已经是管理员了，瞬间踢回后台主页，不允许停留在登录页！
+                // avoid back to login page 
                 window.location.replace("../HTML/admin_index.html"); 
-                return; // 终止后续代码运行
+                return;
             } else {
-                // 异常情况：如果是普通客户不小心卡在后台登录页，强行登出清理掉
+                // sign out if normal user
                 await _supabase.auth.signOut();
             }
         }
@@ -110,11 +106,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
                 alert(`Welcome back, ${profileData.first_name || 'Admin'}!`);
                 
-                // ==========================================
-                // 🚀 第二招：使用 replace 销毁登录页的历史记录
-                // ==========================================
+                // avoid back to login page
                 window.location.replace("../HTML/admin_index.html");
-                // ==========================================
+
 
             } catch (innerError) {
                 // directly log out if error occur

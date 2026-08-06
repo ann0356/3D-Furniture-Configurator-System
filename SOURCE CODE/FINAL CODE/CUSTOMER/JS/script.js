@@ -13,7 +13,6 @@ const mainContent = document.getElementById('main-content');
 window.addEventListener('DOMContentLoaded', async () => {
     console.log("Customer SPA engine started.");
 
-    // 🌟 启动无障碍化工具 (A11y)
     initAccessibilityTools();
 
     initSearchControls();
@@ -32,9 +31,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadCustomerContent(pageToLoad, Object.keys(extraParams).length > 0 ? extraParams : null, true);
 });
 
-// ==========================================
-// ♿ 无障碍工具栏 (A11y) 核心逻辑
-// ==========================================
 function initAccessibilityTools() {
     const triggerBtn = document.getElementById('a11y-trigger');
     const panel = document.getElementById('a11y-panel');
@@ -45,19 +41,16 @@ function initAccessibilityTools() {
 
     if (!triggerBtn || !panel) return; 
 
-    // 面板开关
     triggerBtn.addEventListener('click', () => {
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     });
 
-    // 读取本地记忆
     let currentFontScale = parseFloat(localStorage.getItem('a11y-font-scale')) || 1.0;
     let isHighContrast = localStorage.getItem('a11y-high-contrast') === 'true';
 
     applyFontScale(currentFontScale);
     applyContrast(isHighContrast);
 
-    // 字体缩放逻辑
     function applyFontScale(scale) {
         if (scale < 0.8) scale = 0.8;
         if (scale > 1.5) scale = 1.5;
@@ -71,24 +64,18 @@ function initAccessibilityTools() {
     btnDecrease.addEventListener('click', () => applyFontScale(currentFontScale - 0.1));
     btnReset.addEventListener('click', () => applyFontScale(1.0));
 
-// 高对比度（黑白模式）与 Logo 切换逻辑
     function applyContrast(enable) {
         isHighContrast = enable;
-        
-        // 🌟 获取 header 里的 Logo 图片元素
+
         const logoImg = document.querySelector('#brand-logo img');
 
         if (enable) {
-            // 开启深色模式
             document.body.classList.add('high-contrast-mode');
-            // 切换为白色 Logo
             if (logoImg) {
                 logoImg.src = "https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/Ruma_white_logo.png";
             }
         } else {
-            // 关闭深色模式
             document.body.classList.remove('high-contrast-mode');
-            // 恢复为黑色 Logo
             if (logoImg) {
                 logoImg.src = "https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/Ruma_Logo_black.png";
             }
@@ -99,7 +86,6 @@ function initAccessibilityTools() {
     btnContrast.addEventListener('click', () => applyContrast(!isHighContrast));
 }
 
-// 🌟 2. 监听浏览器的“后退”和“前进”按钮
 window.addEventListener('popstate', async (event) => {
     if (event.state && event.state.pageName) {
         await loadCustomerContent(event.state.pageName, event.state.extraParams, true);
@@ -108,7 +94,6 @@ window.addEventListener('popstate', async (event) => {
     }
 });
 
-// 🌟 3. 改写核心加载器
 export async function loadCustomerContent(pageName, extraParams = null, isHistoryPop = false) {
     try {
         mainContent.innerHTML = "<p style='padding: 40px; text-align: center; color: var(--text-main);'>Loading content...</p>";
@@ -236,14 +221,12 @@ function initSearchControls() {
         }
     });
 
-    // 👇 🌟 核心修复 1：加入 Debounce 防抖计时器 👇
     if (searchInput) {
-        let searchTimeout = null; // 声明防抖计时器
+        let searchTimeout = null;
 
         searchInput.addEventListener('input', () => {
             const query = searchInput.value.trim();
-            
-            // 如果用户还在敲击键盘，立刻打断上一次请求
+
             if (searchTimeout) {
                 clearTimeout(searchTimeout);
             }
@@ -253,7 +236,6 @@ function initSearchControls() {
                 return; 
             }
 
-            // 重新开始倒计时，等待 400ms 后执行查询
             searchTimeout = setTimeout(async () => {
                 try {
                     const baseSelect = `
@@ -295,7 +277,7 @@ function initSearchControls() {
                 } catch (err) { 
                     console.error("Relational Instant Search Error: ", err); 
                 }
-            }, 400); // 400ms 黄金防抖时间
+            }, 400);
         });
     }
     // 👆 ========================================= 👆
@@ -343,13 +325,10 @@ function renderSearchResults(structures) {
         const furniture = item.furniture || {};
         const type = furniture.type || {};
         const category = type.category || {};
-        
-        // 👇 🌟 核心修复 2：统一使用公网 Logo 作为图片为空/加载失败的后备 👇
         const finalImageUrl = item.image_url ? item.image_url : 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_white.png';
-
-        // 👇 🌟 核心修复 3：统一库存判定标准 (与商品详情页逻辑完全同步) 👇
         const stock = Number(item.stock || 0);
         let stockHtml = '';
+
         if (stock >= 100) {
             stockHtml = `<span style="color: #2ecc71; font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;"><i class="fa-solid fa-box-open"></i> In Stock</span>`;
         } else if (stock > 0) {
@@ -357,7 +336,6 @@ function renderSearchResults(structures) {
         } else {
             stockHtml = `<span style="color: #e74c3c; font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;">Out of stock</span>`;
         }
-        // 👆 ========================================================= 👆
 
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
