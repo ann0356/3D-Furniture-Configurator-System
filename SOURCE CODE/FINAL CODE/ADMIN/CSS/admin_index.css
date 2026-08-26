@@ -72,9 +72,16 @@ body.admin-auth-pending > .container { visibility: hidden; }
 .logo-mark {
     display: inline-grid;
     place-items: center;
-    color: #fff;
-    background: linear-gradient(135deg, var(--admin-primary), #7c3aed);
-    box-shadow: 0 9px 18px rgba(79, 70, 229, 0.23);
+    overflow: hidden;
+    background: #312e81;
+}
+
+.loading-mark img,
+.logo-mark img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
 }
 
 .loading-mark {
@@ -112,8 +119,6 @@ header {
     letter-spacing: -0.025em;
     text-decoration: none;
 }
-
-.logo b { color: var(--admin-primary); }
 
 .logo-mark {
     width: 31px;
