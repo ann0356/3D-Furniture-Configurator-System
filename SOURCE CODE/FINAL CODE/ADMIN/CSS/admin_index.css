@@ -72,8 +72,6 @@ body.admin-auth-pending > .container { visibility: hidden; }
 .logo-mark {
     display: inline-grid;
     place-items: center;
-    overflow: hidden;
-    background: #312e81;
 }
 
 .loading-mark img,
@@ -87,7 +85,7 @@ body.admin-auth-pending > .container { visibility: hidden; }
 .loading-mark {
     width: 42px;
     height: 42px;
-    border-radius: 13px;
+    border-radius: 0;
     animation: admin-pulse 1.4s ease-in-out infinite;
 }
 
@@ -123,7 +121,8 @@ header {
 .logo-mark {
     width: 31px;
     height: 31px;
-    border-radius: 10px;
+    flex: 0 0 31px;
+    border-radius: 0;
     font-size: 14px;
 }
 
