@@ -1,51 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">    
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrator</title> 
- <!-- logo on browser tab -->
-    <link rel = "icon" type = "image/png" href = "https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_only.png">
+    <meta name="theme-color" content="#312e81">
+    <title>Ruma Admin</title>
+    <link rel="icon" type="image/png" href="https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_only.png">
     <link rel="stylesheet" href="../CSS/admin_login.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
-    <div class = "login-container">
-        <!-- header -->
-        <div class = "login-header">                 
-            <p class = "title">ADMIN LOGIN</p>
-        </div>
-
-        <!-- email and password -->
-         <div>
-            <!-- avoid auto complete -->
-            <div style="position: absolute; opacity: 0; top: -999px; left: -999px; z-index: -1;">
-                <input type="email" tabindex="-1" aria-hidden="true">
-                <input type="password" tabindex="-1" aria-hidden="true">
+    <main class="admin-login-page">
+        <section class="login-container" aria-labelledby="admin-login-title">
+            <div class="login-brand" aria-hidden="true">
+                <span class="brand-mark"><i class="fa-solid fa-cube"></i></span>
+                <span>Ruma Home</span>
             </div>
 
-            <label for = "email">Email:</label>
-            <input type = "email" class = "data" id = "email" placeholder="Enter your email." required>
+            <header class="login-header">
+                <p class="eyebrow">Operations portal</p>
+                <h1 class="title" id="admin-login-title">Admin sign in</h1>
+                <p class="login-intro">Use an authorised administrator account to manage products, orders and feedback.</p>
+            </header>
 
-            <label for = "password">Password:</label> 
-            <input type = "password" class = "data" id = "password" placeholder="Enter your Password." required>
-         </div>
+            <form id="admin-login-form" class="login-form">
+                <div class="field-group">
+                    <label for="email">Email address</label>
+                    <div class="field-control">
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                        <input type="email" class="data" id="email" placeholder="name@example.com" autocomplete="username" required>
+                    </div>
+                </div>
 
-        <div style="display: flex;gap:5px;">
-            <input type="checkbox" class = "check-box" id="toggle-password">
-            <label for="toggle-password" style = "margin-bottom: 0;">Show Password</label>
-        </div>
+                <div class="field-group">
+                    <label for="password">Password</label>
+                    <div class="field-control">
+                        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        <input type="password" class="data" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+                    </div>
+                </div>
 
-        <div style = "display: flex; justify-content: center;">
-            <!-- login button -->
-            <button type = "button" id = "login-btn" class = "login-btn">Login</button>
-        </div>        
-    </div>
+                <label class="password-toggle" for="toggle-password">
+                    <input type="checkbox" id="toggle-password">
+                    <span>Show password</span>
+                </label>
 
-    <script type = "module" src = "../JS/admin_login.js"></script>
+                <p id="login-message" class="login-message" role="status" aria-live="polite"></p>
+
+                <button type="submit" id="login-btn" class="login-btn">
+                    <span>Sign in</span>
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script type="module" src="../JS/admin_login.js"></script>
 </body>
 </html>

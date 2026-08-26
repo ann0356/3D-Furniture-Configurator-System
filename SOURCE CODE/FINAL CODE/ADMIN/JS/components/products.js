@@ -162,6 +162,7 @@ async function loadFurniture() {
 
     data.forEach(fur => {
         const furDiv = document.createElement('div');
+        furDiv.className = 'furniture-admin-card';
         furDiv.style.border = "1px solid #ccc";
         furDiv.style.borderRadius = "8px";
         furDiv.style.padding = "15px";
@@ -169,24 +170,24 @@ async function loadFurniture() {
         furDiv.style.marginBottom = "15px";
 
         const header = document.createElement('div');
+        header.className = 'furniture-admin-card-header';
         header.style.display = "flex";
         header.style.justifyContent = "space-between";
         header.style.alignItems = "center";
-        header.style.cursor = "pointer";
+        header.style.cursor = "default";
         header.style.fontWeight = "bold";
         
         header.innerHTML = `
-            <span>Sub-items (SKUs): ▼</span>
-            <div style="display:flex; align-items:center; gap:10px; margin-left:auto; margin-right: 15px;">
-                <button class="btn-add-str" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">➕ Add Structure</button>
-                <button class="btn-edit-fur" style="background:#3498db; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">✏️ Edit</button>
-                <button class="btn-delete-fur" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">🗑️ Delete</button>
+            <button type="button" class="furniture-expand" aria-expanded="false">
+                <span class="furniture-name"><i class="fa-solid fa-couch" aria-hidden="true"></i> ${escapeHTML(fur.furniture_name)} <small>(ID: ${escapeHTML(fur.furniture_id)})</small></span>
+                <span class="furniture-sku">Variants <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span>
+            </button>
+            <div class="furniture-actions">
+                <button type="button" class="btn-add-str" aria-label="Add structure for ${escapeHTML(fur.furniture_name)}" style="background:#15803d; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add structure</span></button>
+                <button type="button" class="btn-edit-fur" aria-label="Edit ${escapeHTML(fur.furniture_name)}" style="background:#2563eb; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit</span></button>
+                <button type="button" class="btn-delete-fur" aria-label="Delete ${escapeHTML(fur.furniture_name)}" style="background:#c2414d; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-trash" aria-hidden="true"></i><span>Delete</span></button>
             </div>
         `;
-        
-        const titleSpan = document.createElement('span');
-        titleSpan.innerText = `🛋️ ${fur.furniture_name} (ID: ${fur.furniture_id})`;
-        header.insertBefore(titleSpan, header.firstChild);
 
         const details = document.createElement('div');
         details.style.display = "none";
@@ -195,7 +196,7 @@ async function loadFurniture() {
         details.style.paddingTop = "15px";
 
         if (fur.structure && fur.structure.length > 0) {
-            let tableHTML = `<table style="width: 100%; font-size: 14px; text-align: left; border-collapse:collapse;">
+            let tableHTML = `<div class="structure-table-wrap"><table class="structure-table" style="width: 100%; font-size: 14px; text-align: left; border-collapse:collapse;">
                 <tr style="background: #f8f9fa; border-bottom:1px solid #ddd;">
                     <th style="padding:8px;">ID</th><th style="padding:8px;">Name</th><th style="padding:8px;">Price</th>
                     <th style="padding:8px;">Stock</th><th style="padding:8px;">Spec & Dimensions</th><th style="padding:8px;">Image</th>
@@ -206,7 +207,7 @@ async function loadFurniture() {
                 const imageUrl = safeAssetUrl(s.image_url);
                 const modelUrl = safeAssetUrl(s.model_url);
                 const imgLink = imageUrl ? `<a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer" style="color:#3498db; text-decoration:underline;">View</a>` : 'N/A';
-                const modelLink = modelUrl ? `<span class="btn-preview-3d" data-url="${escapeHTML(modelUrl)}" style="color:#e67e22; cursor:pointer; text-decoration:underline; font-weight:bold;">Preview</span>` : 'N/A';
+                const modelLink = modelUrl ? `<button type="button" class="btn-preview-3d" data-url="${escapeHTML(modelUrl)}" aria-label="Preview 3D model for ${escapeHTML(s.structure_name)}" style="color:#b45309; background:transparent; border:1px solid currentColor; padding:3px 8px; cursor:pointer;">Preview 3D</button>` : 'N/A';
                 
                 tableHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
@@ -222,12 +223,12 @@ async function loadFurniture() {
                     <td style="padding:8px;">${imgLink}</td>
                     <td style="padding:8px;">${modelLink}</td>
                     <td style="padding:8px; text-align:center;">
-                        <button class="btn-row-edit" data-id="${escapeHTML(s.structure_id)}" style="background:#3498db; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px; margin-right:5px;">✏️ Edit</button>
-                        <button class="btn-row-delete" data-id="${escapeHTML(s.structure_id)}" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
+                        <button type="button" class="btn-row-edit" data-id="${escapeHTML(s.structure_id)}" style="background:#2563eb; color:white; border:none; padding:3px 8px; cursor:pointer; font-size:12px;">Edit</button>
+                        <button type="button" class="btn-row-delete" data-id="${escapeHTML(s.structure_id)}" style="background:#c2414d; color:white; border:none; padding:3px 8px; cursor:pointer; font-size:12px;">Delete</button>
                     </td>
                 </tr>`;
             });
-            tableHTML += `</table>`;
+            tableHTML += `</table></div>`;
             details.innerHTML = tableHTML;
 
             details.querySelectorAll('.btn-preview-3d').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); open3DPreview(btn.getAttribute('data-url')); });
@@ -275,10 +276,11 @@ async function loadFurniture() {
             }
         };
 
-        header.onclick = (e) => {
-            if (!e.target.closest('button') && !e.target.classList.contains('btn-preview-3d')) {
-                details.style.display = details.style.display === "none" ? "block" : "none";
-            }
+        const expandButton = header.querySelector('.furniture-expand');
+        expandButton.onclick = () => {
+            const isExpanded = details.style.display !== 'none';
+            details.style.display = isExpanded ? 'none' : 'block';
+            expandButton.setAttribute('aria-expanded', String(!isExpanded));
         };
         
         furDiv.appendChild(header);
@@ -535,37 +537,30 @@ async function submitEditStructure() {
 
 function createCard(title, subtitle, onClick, onDelete, onEdit) {
     const card = document.createElement('div');
-    card.style.background = "white"; card.style.padding = "20px"; card.style.borderRadius = "8px";
-    card.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)"; card.style.cursor = "pointer";
-    card.style.border = "1px solid transparent"; card.style.position = "relative"; card.style.transition = "all 0.2s";
+    card.className = 'admin-entity-card';
     
     card.innerHTML = `
-        <h3 style="margin-bottom: 5px; color:#1e2937; padding-right:50px;">${escapeHTML(title)}</h3>
-        <p style="color: #7f8c8d; font-size: 14px; margin:0;">${escapeHTML(subtitle)}</p>
-        <div class="card-actions" style="position:absolute; top:15px; right:15px; display:none; gap:10px;">
-            <span class="btn-edit-card" style="color:#3498db; font-size:16px; cursor:pointer;">✏️</span>
-            <span class="btn-delete-card" style="color:#e74c3c; font-size:16px; cursor:pointer;">🗑️</span>
+        <button type="button" class="entity-open" aria-label="Open ${escapeHTML(title)}">
+            <h3>${escapeHTML(title)}</h3>
+            <p>${escapeHTML(subtitle)}</p>
+        </button>
+        <div class="card-actions">
+            <button type="button" class="card-action-btn edit btn-edit-card" aria-label="Edit ${escapeHTML(title)}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+            <button type="button" class="card-action-btn delete btn-delete-card" aria-label="Delete ${escapeHTML(title)}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
         </div>
     `;
     
-    card.onmouseover = () => { card.style.border = "1px solid #3498db"; card.querySelector('.card-actions').style.display = 'flex'; };
-    card.onmouseout = () => { card.style.border = "1px solid transparent"; card.querySelector('.card-actions').style.display = 'none'; };
-    
-    card.onclick = onClick;
-    card.querySelector('.btn-edit-card').onclick = onEdit; 
-    card.querySelector('.btn-delete-card').onclick = onDelete;
+    card.querySelector('.entity-open').onclick = onClick;
+    card.querySelector('.btn-edit-card').onclick = (event) => { event.stopPropagation(); onEdit(event); };
+    card.querySelector('.btn-delete-card').onclick = (event) => { event.stopPropagation(); onDelete(event); };
     return card;
 }
 
 function createAddButton(text, onClick) {
-    const btn = document.createElement('div');
-    btn.style.display = "flex"; btn.style.alignItems = "center"; btn.style.justifyContent = "center";
-    btn.style.padding = "20px"; btn.style.borderRadius = "8px"; btn.style.border = "2px dashed #bdc3c7";
-    btn.style.color = "#7f8c8d"; btn.style.cursor = "pointer"; btn.style.fontWeight = "bold"; btn.style.transition = "all 0.2s";
-    btn.innerText = text;
-    
-    btn.onmouseover = () => { btn.style.border = "2px dashed #3498db"; btn.style.color = "#3498db"; };
-    btn.onmouseout = () => { btn.style.border = "2px dashed #bdc3c7"; btn.style.color = "#7f8c8d"; };
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'admin-add-button';
+    btn.innerHTML = `<i class="fa-solid fa-plus" aria-hidden="true"></i><span>${escapeHTML(text.replace(/^➕\s*/, ''))}</span>`;
     btn.onclick = onClick;
     return btn;
 }

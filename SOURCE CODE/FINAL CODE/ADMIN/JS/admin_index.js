@@ -1,22 +1,39 @@
 import { _supabase } from '../../SUPABASE/supabase_admin_conn.js';
 import { initDashboard } from './components/dashboard.js';
 import { initProducts } from './components/products.js';
-import { initAdminOrder } from './components/orders.js'; 
+import { initAdminOrder } from './components/orders.js';
 import { initFeedback } from './components/feedback.js';
 
 const mainContent = document.getElementById('main-content');
+const sidebar = document.getElementById('admin-sidebar');
+const menuToggle = document.getElementById('menu-toggle');
+const navBackdrop = document.getElementById('nav-backdrop');
 let isAdminExitCleanupBound = false;
+
+function setDrawerState(isOpen) {
+    sidebar.classList.toggle('is-open', isOpen);
+    navBackdrop.classList.toggle('is-visible', isOpen);
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
+    menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+}
+
+function setActiveMenu(pageName) {
+    document.querySelectorAll('.menu-item').forEach((item) => {
+        const isCurrent = item.getAttribute('data-page') === pageName;
+        item.classList.toggle('active', isCurrent);
+        if (isCurrent) item.setAttribute('aria-current', 'page');
+        else item.removeAttribute('aria-current');
+    });
+}
 
 function bindAdminExitCleanup() {
     if (isAdminExitCleanupBound) return;
 
     window.addEventListener('pagehide', () => {
-        // pagehide is synchronous, unlike an async signOut request that browsers may cancel.
         localStorage.removeItem('sb-admin-auth-token');
         sessionStorage.removeItem('sb-admin-auth-token');
     });
 
-    // A page restored from the browser's back-forward cache must re-authenticate too.
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) window.location.replace('admin_login.html');
     });
@@ -24,105 +41,100 @@ function bindAdminExitCleanup() {
     isAdminExitCleanupBound = true;
 }
 
-// check authentication
 async function checkAuth() {
     try {
         const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
 
-        // if no session, back to login page
         if (sessionError || !session) {
-            window.location.href = 'admin_login.html'; 
+            window.location.replace('admin_login.html');
             return;
         }
-
-        const userId = session.user.id;
 
         const { data: profileData, error: profileError } = await _supabase
             .from('profiles')
             .select('role')
-            .eq('id', userId)
+            .eq('id', session.user.id)
             .single();
 
-        if (profileError || !profileData || profileData.role !== 'superadmin') {
-            await _supabase.auth.signOut(); 
-            alert("Access Denied: You do not have administrator privileges.");
-            window.location.href = 'admin_login.html';
+        if (profileError || profileData?.role !== 'superadmin') {
+            await _supabase.auth.signOut();
+            window.location.replace('admin_login.html');
             return;
         }
 
-        document.body.style.display = 'flex'; 
+        document.body.classList.remove('admin-auth-pending');
         bindAdminExitCleanup();
-        
-        // display the page view last time
+
         const savedPage = localStorage.getItem('admin_current_page') || 'dashboard';
-        loadContent(savedPage);
-
-        // active the aside button for current page
-        document.querySelectorAll('.menu-item').forEach(el => {
-            el.classList.remove('active');
-            if (el.getAttribute('data-page') === savedPage) {
-                el.classList.add('active');
-            }
-        });
-
+        setActiveMenu(savedPage);
+        await loadContent(savedPage);
     } catch (error) {
-        console.error("Identity error:", error);
-        window.location.href = 'admin_login.html';
+        console.error('Identity error:', error);
+        window.location.replace('admin_login.html');
     }
 }
 
-// page loading 
 async function loadContent(pageName) {
     try {
-        // save page info to local
         localStorage.setItem('admin_current_page', pageName);
+        setActiveMenu(pageName);
+        mainContent.innerHTML = '<div class="admin-page-loading" role="status">Loading workspace…</div>';
 
-        mainContent.innerHTML = "<p style='padding:20px;'>Loading...</p>"; 
-        
         const response = await fetch(`../HTML/components/${pageName}.html`);
-        if (!response.ok) throw new Error("Fail to load!");
-        
-        const html = await response.text();
-        mainContent.innerHTML = html;
+        if (!response.ok) throw new Error('Failed to load the requested workspace.');
 
-        if (pageName === 'dashboard') {
-            await initDashboard(); 
-        } else if (pageName === 'products') {
-            await initProducts(); 
-        } else if (pageName === 'orders') {
-            await initAdminOrder();
-        }else if (pageName === 'customer_feedback') {
-            await initFeedback();
-        }
+        mainContent.innerHTML = await response.text();
 
+        if (pageName === 'dashboard') await initDashboard();
+        else if (pageName === 'products') await initProducts();
+        else if (pageName === 'orders') await initAdminOrder();
+        else if (pageName === 'customer_feedback') await initFeedback();
     } catch (error) {
         console.error(error);
-        mainContent.innerHTML = "<h2>Failed to load, please try again.</h2>";
+        mainContent.innerHTML = '<div class="admin-page-error" role="alert"><h2>Unable to load this page</h2><p>Please refresh and try again.</p></div>';
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
+window.addEventListener('DOMContentLoaded', checkAuth);
+
+menuToggle.addEventListener('click', () => {
+    setDrawerState(!sidebar.classList.contains('is-open'));
 });
 
-document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        this.classList.add('active');
-        
+navBackdrop.addEventListener('click', () => setDrawerState(false));
+
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
+        setDrawerState(false);
+        menuToggle.focus();
+    }
+});
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) setDrawerState(false);
+});
+
+document.querySelectorAll('.menu-item').forEach((item) => {
+    item.addEventListener('click', async function handleNavigation(event) {
+        event.preventDefault();
         const pageId = this.getAttribute('data-page');
-        loadContent(pageId); 
+        setDrawerState(false);
+        await loadContent(pageId);
+        mainContent.focus({ preventScroll: true });
     });
+});
+
+document.querySelector('.logo')?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    setDrawerState(false);
+    await loadContent('dashboard');
+    mainContent.focus({ preventScroll: true });
 });
 
 const logoutBtn = document.getElementById('logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        // clear local storage
-        localStorage.removeItem('admin_current_page');
-        
-        await _supabase.auth.signOut();
-        window.location.href = 'admin_login.html';
-    });
-}
+logoutBtn?.addEventListener('click', async () => {
+    logoutBtn.disabled = true;
+    localStorage.removeItem('admin_current_page');
+    await _supabase.auth.signOut();
+    window.location.replace('admin_login.html');
+});

@@ -1,69 +1,49 @@
 import { _supabase } from '../../SUPABASE/supabase_admin_conn.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
+    const form = document.getElementById('admin-login-form');
+    const loginBtn = document.getElementById('login-btn');
+    const togglePasswordCheckbox = document.getElementById('toggle-password');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const message = document.getElementById('login-message');
+
+    const showMessage = (text = '', type = 'error') => {
+        message.textContent = text;
+        message.classList.toggle('is-success', type === 'success');
+    };
 
     try {
-        // check session of login
         const { data: { session } } = await _supabase.auth.getSession();
-        
+
         if (session) {
-            // check session == admin
             const { data: profile } = await _supabase
                 .from('profiles')
                 .select('role')
                 .eq('id', session.user.id)
                 .single();
 
-            if (profile && profile.role === 'superadmin') {
-                // avoid back to login page 
-                window.location.replace("../HTML/admin_index.html"); 
+            if (profile?.role === 'superadmin') {
+                window.location.replace('../HTML/admin_index.html');
                 return;
-            } else {
-                // sign out if normal user
-                await _supabase.auth.signOut();
             }
+
+            await _supabase.auth.signOut();
         }
-    } catch (err) {
-        console.error("Session check error:", err);
+    } catch (error) {
+        console.error('Session check error:', error);
     }
-    // ==========================================
 
-    const loginBtn = document.getElementById('login-btn');
-    const togglePasswordCheckbox = document.getElementById('toggle-password');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-
-    // display password
-    togglePasswordCheckbox.addEventListener('change', function() {
-        passwordInput.type = this.checked ? 'text' : 'password';
+    togglePasswordCheckbox.addEventListener('change', () => {
+        passwordInput.type = togglePasswordCheckbox.checked ? 'text' : 'password';
     });
 
-    // listen Enter input
-    passwordInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            loginBtn.click();
-        }
-    });
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showMessage();
 
-    emailInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            // jump to password input panel while password is not filled up
-            if (!passwordInput.value) {
-                passwordInput.focus(); 
-            } else {
-                // if filled up, login directly
-                loginBtn.click();
-            }
-        }
-    });
-
-    // login account
-    loginBtn.addEventListener('click', async () => {
-        // check connect to db
         if (!_supabase) {
-            alert("System error: Unable to connect to the server. Please refresh the page.");
+            showMessage('Unable to connect to the server. Please refresh and try again.');
             return;
         }
 
@@ -71,65 +51,44 @@ window.addEventListener('DOMContentLoaded', async () => {
         const password = passwordInput.value;
 
         if (!email || !password) {
-            alert("Please enter both email and password.");
+            showMessage('Enter both your email address and password.');
+            (!email ? emailInput : passwordInput).focus();
             return;
         }
 
         loginBtn.disabled = true;
-        loginBtn.innerText = "Logging in...";
+        loginBtn.querySelector('span').textContent = 'Signing in…';
 
         try {
-            const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+            const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
+            if (authError) throw authError;
+            if (!authData?.user) throw new Error('Missing session data.');
 
-            if (authError) throw authError; 
-            if (!authData || !authData.user) throw new Error("Missing session data.");
+            const { data: profileData, error: profileError } = await _supabase
+                .from('profiles')
+                .select('first_name, role')
+                .eq('id', authData.user.id)
+                .single();
 
-            const userId = authData.user.id;
-
-            try {
-                const { data: profileData, error: profileError } = await _supabase
-                    .from('profiles')
-                    .select('first_name, role') 
-                    .eq('id', userId)
-                    .single();
-
-                // error checking
-                if (profileError) throw profileError;
-
-                // block non admin user
-                if (profileData && profileData.role !== 'superadmin') {
-                    throw new Error("Access Denied: You do not have administrator privileges.");
-                }
-
-                alert(`Welcome back, ${profileData.first_name || 'Admin'}!`);
-                
-                // avoid back to login page
-                window.location.replace("../HTML/admin_index.html");
-
-
-            } catch (innerError) {
-                // directly log out if error occur
-                await _supabase.auth.signOut();
-                throw innerError; 
+            if (profileError) throw profileError;
+            if (profileData?.role !== 'superadmin') {
+                throw new Error('Access denied. This account does not have administrator privileges.');
             }
 
+            showMessage(`Welcome back, ${profileData.first_name || 'Admin'}. Opening the dashboard…`, 'success');
+            window.location.replace('../HTML/admin_index.html');
         } catch (error) {
-            console.error("Login process error:", error);
-            
-            let errorMessage = error.message;
-            if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
-                errorMessage = "Network disconnected. Please check your internet connection.";
-            }
-            
-            alert("Login Failed: " + errorMessage);
+            console.error('Login process error:', error);
+            await _supabase.auth.signOut();
 
+            let errorMessage = error.message || 'Unable to sign in. Please try again.';
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+                errorMessage = 'Network disconnected. Check your internet connection and try again.';
+            }
+            showMessage(errorMessage);
         } finally {
             loginBtn.disabled = false;
-            loginBtn.innerText = "Login";
+            loginBtn.querySelector('span').textContent = 'Sign in';
         }
     });
-
 });
