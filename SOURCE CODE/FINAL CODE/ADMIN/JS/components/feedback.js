@@ -50,7 +50,7 @@ export async function initFeedback() {
                 </td>
                 <td>
                     ${status === 'unread'
-                        ? `<button class="btn-action mark-read-btn" data-id="${id}">Mark Read</button>`
+                        ? `<button type="button" class="admin-btn admin-btn-primary admin-btn-compact btn-action mark-read-btn" data-id="${id}">Mark read</button>`
                         : `<span style="color:#ccc;font-size:12px;">Read</span>`}
                 </td>
             </tr>

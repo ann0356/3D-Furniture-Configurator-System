@@ -295,23 +295,67 @@ h1, h2, h3, h4 { color: var(--admin-text); }
 
 .dashboard-page .action-bar select { padding: 8px 10px !important; }
 
-.btn-primary,
-.ao-btn,
-.btn-action,
-.btn-cancel,
-#export-report-btn {
-    min-height: 40px;
-    border-radius: 10px !important;
-    font-weight: 750;
-}
-
-#export-report-btn {
+.admin-btn {
+    min-height: 42px !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    padding: 8px 13px !important;
-    background: #334155 !important;
+    gap: 8px;
+    padding: 9px 14px !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+    font-size: 13px !important;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.admin-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 12px rgba(15, 23, 42, 0.14); }
+.admin-btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.admin-btn:disabled { cursor: wait; opacity: 0.66; }
+
+.admin-btn-primary { color: #fff !important; background: var(--admin-primary) !important; border: 1px solid var(--admin-primary) !important; }
+.admin-btn-primary:hover:not(:disabled) { background: var(--admin-primary-dark) !important; border-color: var(--admin-primary-dark) !important; }
+.admin-btn-secondary { color: #334155 !important; background: #fff !important; border: 1px solid var(--admin-border) !important; }
+.admin-btn-secondary:hover:not(:disabled) { background: #f8fafc !important; border-color: #aebbd0 !important; }
+.admin-btn-success { color: #fff !important; background: #15803d !important; border: 1px solid #15803d !important; }
+.admin-btn-success:hover:not(:disabled) { background: #166534 !important; border-color: #166534 !important; }
+.admin-btn-danger { color: #fff !important; background: #c2414d !important; border: 1px solid #c2414d !important; }
+.admin-btn-danger:hover:not(:disabled) { background: #a52c3a !important; border-color: #a52c3a !important; }
+.admin-btn-outline { color: #8a4b0d !important; background: #fffbeb !important; border: 1px solid #fcd34d !important; }
+.admin-btn-outline:hover:not(:disabled) { background: #fef3c7 !important; border-color: #fbbf24 !important; }
+
+.admin-btn-compact {
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+}
+
+.admin-icon-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    color: #475569;
+    background: #fff;
+    cursor: pointer;
+    transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.admin-icon-btn:hover { color: var(--admin-primary); border-color: #a5b4fc; background: #eef2ff; }
+.admin-icon-btn-inverse { color: #fff; border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); }
+.admin-icon-btn-inverse:hover { color: #fff; border-color: rgba(255, 255, 255, 0.52); background: rgba(255, 255, 255, 0.2); }
+.modal-close { position: absolute; top: 15px; right: 15px; }
+
+#export-report-btn {
+    min-width: 142px;
 }
 
 /* Dashboard */

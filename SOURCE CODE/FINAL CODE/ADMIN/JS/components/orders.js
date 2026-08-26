@@ -144,7 +144,7 @@ function renderTable(dataArray) {
                 </select>
             </td>
             <td>
-                <button class="view-detail-btn ao-btn" style="padding: 5px 12px; font-size: 12px; background: #6366f1; color: white;">View Detail</button>
+                <button type="button" class="view-detail-btn admin-btn admin-btn-primary admin-btn-compact ao-btn">View details</button>
             </td>
         `;
 

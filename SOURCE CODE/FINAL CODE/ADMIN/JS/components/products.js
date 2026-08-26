@@ -183,9 +183,9 @@ async function loadFurniture() {
                 <span class="furniture-sku">Variants <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span>
             </button>
             <div class="furniture-actions">
-                <button type="button" class="btn-add-str" aria-label="Add structure for ${escapeHTML(fur.furniture_name)}" style="background:#15803d; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add structure</span></button>
-                <button type="button" class="btn-edit-fur" aria-label="Edit ${escapeHTML(fur.furniture_name)}" style="background:#2563eb; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit</span></button>
-                <button type="button" class="btn-delete-fur" aria-label="Delete ${escapeHTML(fur.furniture_name)}" style="background:#c2414d; color:white; border:none; padding:5px 10px; cursor:pointer;"><i class="fa-solid fa-trash" aria-hidden="true"></i><span>Delete</span></button>
+                <button type="button" class="admin-btn admin-btn-success admin-btn-compact btn-add-str" aria-label="Add structure for ${escapeHTML(fur.furniture_name)}"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add structure</span></button>
+                <button type="button" class="admin-btn admin-btn-primary admin-btn-compact btn-edit-fur" aria-label="Edit ${escapeHTML(fur.furniture_name)}"><i class="fa-solid fa-pen" aria-hidden="true"></i><span>Edit</span></button>
+                <button type="button" class="admin-btn admin-btn-danger admin-btn-compact btn-delete-fur" aria-label="Delete ${escapeHTML(fur.furniture_name)}"><i class="fa-solid fa-trash" aria-hidden="true"></i><span>Delete</span></button>
             </div>
         `;
 
@@ -207,7 +207,7 @@ async function loadFurniture() {
                 const imageUrl = safeAssetUrl(s.image_url);
                 const modelUrl = safeAssetUrl(s.model_url);
                 const imgLink = imageUrl ? `<a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer" style="color:#3498db; text-decoration:underline;">View</a>` : 'N/A';
-                const modelLink = modelUrl ? `<button type="button" class="btn-preview-3d" data-url="${escapeHTML(modelUrl)}" aria-label="Preview 3D model for ${escapeHTML(s.structure_name)}" style="color:#b45309; background:transparent; border:1px solid currentColor; padding:3px 8px; cursor:pointer;">Preview 3D</button>` : 'N/A';
+                const modelLink = modelUrl ? `<button type="button" class="admin-btn admin-btn-outline admin-btn-compact btn-preview-3d" data-url="${escapeHTML(modelUrl)}" aria-label="Preview 3D model for ${escapeHTML(s.structure_name)}">Preview 3D</button>` : 'N/A';
                 
                 tableHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
@@ -223,8 +223,8 @@ async function loadFurniture() {
                     <td style="padding:8px;">${imgLink}</td>
                     <td style="padding:8px;">${modelLink}</td>
                     <td style="padding:8px; text-align:center;">
-                        <button type="button" class="btn-row-edit" data-id="${escapeHTML(s.structure_id)}" style="background:#2563eb; color:white; border:none; padding:3px 8px; cursor:pointer; font-size:12px;">Edit</button>
-                        <button type="button" class="btn-row-delete" data-id="${escapeHTML(s.structure_id)}" style="background:#c2414d; color:white; border:none; padding:3px 8px; cursor:pointer; font-size:12px;">Delete</button>
+                        <button type="button" class="admin-btn admin-btn-primary admin-btn-compact btn-row-edit" data-id="${escapeHTML(s.structure_id)}">Edit</button>
+                        <button type="button" class="admin-btn admin-btn-danger admin-btn-compact btn-row-delete" data-id="${escapeHTML(s.structure_id)}">Delete</button>
                     </td>
                 </tr>`;
             });
