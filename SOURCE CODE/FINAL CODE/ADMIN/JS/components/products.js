@@ -11,6 +11,47 @@ let currentFurnitureId = null;
 let editTargetTable = ''; 
 let editTargetId = '';
 let activeEditStrObj = null; 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_MODEL_SIZE_BYTES = 25 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function safeAssetUrl(value) {
+    try {
+        const url = new URL(String(value || ''), window.location.origin);
+        return url.protocol === 'https:' ? url.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function validateImageFile(file) {
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+        throw new Error('Use a JPG, PNG, or WebP image.');
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        throw new Error('Images must be 5 MB or smaller.');
+    }
+}
+
+function validateModelFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+        throw new Error('Only .glb 3D models are supported.');
+    }
+    if (file.size > MAX_MODEL_SIZE_BYTES) {
+        throw new Error('3D models must be 25 MB or smaller.');
+    }
+}
 
 export async function initProducts() {
     console.log("Furniture Management initialized with full CRUD & separated workflows.");
@@ -162,25 +203,27 @@ async function loadFurniture() {
                 </tr>`;
             
             fur.structure.forEach(s => {
-                const imgLink = s.image_url ? `<a href="${s.image_url}" target="_blank" style="color:#3498db; text-decoration:underline;">View</a>` : 'N/A';
-                const modelLink = s.model_url ? `<span class="btn-preview-3d" data-url="${s.model_url}" style="color:#e67e22; cursor:pointer; text-decoration:underline; font-weight:bold;">Preview</span>` : 'N/A';
+                const imageUrl = safeAssetUrl(s.image_url);
+                const modelUrl = safeAssetUrl(s.model_url);
+                const imgLink = imageUrl ? `<a href="${escapeHTML(imageUrl)}" target="_blank" rel="noopener noreferrer" style="color:#3498db; text-decoration:underline;">View</a>` : 'N/A';
+                const modelLink = modelUrl ? `<span class="btn-preview-3d" data-url="${escapeHTML(modelUrl)}" style="color:#e67e22; cursor:pointer; text-decoration:underline; font-weight:bold;">Preview</span>` : 'N/A';
                 
                 tableHTML += `
                 <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding:8px;">${s.structure_id}</td>
-                    <td style="padding:8px;">${s.structure_name}</td>
-                    <td style="padding:8px;">RM ${s.price}</td>
-                    <td style="padding:8px;">${s.stock}</td>
+                    <td style="padding:8px;">${escapeHTML(s.structure_id)}</td>
+                    <td style="padding:8px;">${escapeHTML(s.structure_name)}</td>
+                    <td style="padding:8px;">RM ${escapeHTML(s.price)}</td>
+                    <td style="padding:8px;">${escapeHTML(s.stock)}</td>
                     <td style="padding:8px; font-size:12px; color:#555;">
-                        Col: ${s.colour || '-'}<br>
-                        Mat: ${s.material || '-'}<br>
-                        Dim: ${s.length || 0}x${s.width || 0}x${s.height || 0} cm
+                        Col: ${escapeHTML(s.colour || '-')}<br>
+                        Mat: ${escapeHTML(s.material || '-')}<br>
+                        Dim: ${escapeHTML(s.length || 0)}x${escapeHTML(s.width || 0)}x${escapeHTML(s.height || 0)} cm
                     </td>
                     <td style="padding:8px;">${imgLink}</td>
                     <td style="padding:8px;">${modelLink}</td>
                     <td style="padding:8px; text-align:center;">
-                        <button class="btn-row-edit" data-id="${s.structure_id}" style="background:#3498db; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px; margin-right:5px;">✏️ Edit</button>
-                        <button class="btn-row-delete" data-id="${s.structure_id}" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
+                        <button class="btn-row-edit" data-id="${escapeHTML(s.structure_id)}" style="background:#3498db; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px; margin-right:5px;">✏️ Edit</button>
+                        <button class="btn-row-delete" data-id="${escapeHTML(s.structure_id)}" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; cursor:pointer; font-size:12px;">🗑️ Delete</button>
                     </td>
                 </tr>`;
             });
@@ -306,6 +349,8 @@ async function saveStructure() {
 
         if (!sId || !sName) throw new Error("Structure ID and Name fields are mandatory.");
         if (await checkIdExists('structure', 'structure_id', sId)) throw new Error("This Structure ID already exists!");
+        validateImageFile(imgFile);
+        validateModelFile(modelFile);
 
         let publicImgUrl = null, publicModelUrl = null;
 
@@ -319,7 +364,6 @@ async function saveStructure() {
 
         if (modelFile) {
             const fileExt = modelFile.name.split('.').pop().toLowerCase();
-            if (fileExt !== 'glb') throw new Error("Invalid model file type! Only .glb asset items are allowed.");
             const fileName = `${sId}_model_${Date.now()}.${fileExt}`;
             const { error: modErr } = await _supabase.storage.from('furniture-models').upload(fileName, modelFile);
             if (modErr) throw modErr;
@@ -447,6 +491,8 @@ async function submitEditStructure() {
         const modelFile = document.getElementById('input-edit-str-model').files[0];
 
         if (!name) throw new Error("Structure identity name cannot be null.");
+        validateImageFile(imgFile);
+        validateModelFile(modelFile);
 
         let updatedImgUrl = activeEditStrObj.image_url;
         let updatedModelUrl = activeEditStrObj.model_url;
@@ -461,7 +507,6 @@ async function submitEditStructure() {
 
         if (modelFile) {
             const fileExt = modelFile.name.split('.').pop().toLowerCase();
-            if (fileExt !== 'glb') throw new Error("Asset structural update must strictly match .glb formatting extension rules.");
             const fileName = `${activeEditStrObj.structure_id}_model_${Date.now()}.${fileExt}`;
             const { error: modErr } = await _supabase.storage.from('furniture-models').upload(fileName, modelFile);
             if (modErr) throw modErr;
@@ -495,8 +540,8 @@ function createCard(title, subtitle, onClick, onDelete, onEdit) {
     card.style.border = "1px solid transparent"; card.style.position = "relative"; card.style.transition = "all 0.2s";
     
     card.innerHTML = `
-        <h3 style="margin-bottom: 5px; color:#1e2937; padding-right:50px;">${title}</h3>
-        <p style="color: #7f8c8d; font-size: 14px; margin:0;">${subtitle}</p>
+        <h3 style="margin-bottom: 5px; color:#1e2937; padding-right:50px;">${escapeHTML(title)}</h3>
+        <p style="color: #7f8c8d; font-size: 14px; margin:0;">${escapeHTML(subtitle)}</p>
         <div class="card-actions" style="position:absolute; top:15px; right:15px; display:none; gap:10px;">
             <span class="btn-edit-card" style="color:#3498db; font-size:16px; cursor:pointer;">✏️</span>
             <span class="btn-delete-card" style="color:#e74c3c; font-size:16px; cursor:pointer;">🗑️</span>
@@ -527,8 +572,13 @@ function createAddButton(text, onClick) {
 
 function open3DPreview(url) {
     const container = document.getElementById('model-viewer-container');
+    const safeUrl = safeAssetUrl(url);
+    if (!safeUrl) {
+        alert('This 3D model URL is invalid.');
+        return;
+    }
     container.innerHTML = `
-        <model-viewer src="${url}" ar camera-controls touch-action="pan-y" 
+        <model-viewer src="${escapeHTML(safeUrl)}" ar camera-controls touch-action="pan-y"
             style="width: 100%; height: 100%; background-color: #f8fafc;" shadow-intensity="1.5" auto-rotate>
         </model-viewer>
     `;

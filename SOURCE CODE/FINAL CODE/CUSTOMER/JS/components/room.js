@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'; 
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js'; 
+import { escapeHTML, safeAssetUrl } from '../utils/dom.js';
 
 let scene, camera, renderer, orbitControls, transformControls;
 let floorMesh, gridHelper, wallLines = [];
@@ -19,11 +20,30 @@ let selectedItem = null;
 let currentRoomId = null;
 let currentUserId = null;
 let isGlobalEventBound = false;
+let isContrastEventBound = false;
+let animationFrameId = null;
+let roomResizeHandler = null;
+
+const ROOM_THEME = {
+    light: {
+        scene: 0xf1f5f9,
+        floor: 0xfefefe,
+        grid: 0xe2e8f0,
+        wall: 0x94a3b8
+    },
+    highContrast: {
+        scene: 0x000000,
+        floor: 0x111111,
+        grid: 0xffffff,
+        wall: 0xffff00
+    }
+};
 
 export async function initRoom() {
     const container = document.getElementById('room-canvas');
     if (!container) return;
 
+    _disposeThree();
     placedItems.clear();
     selectedItem = null;
 
@@ -31,12 +51,44 @@ export async function initRoom() {
     currentUserId = session?.user?.id ?? null;
 
     _initThree(container);
+    _bindContrastEvents();
     _bindUIEvents();
     _updateFloor(10, 10);
     
     if (currentUserId) await _loadSavedRooms();
     await _loadFurnitureLibrary();
     _animate();
+}
+
+function _disposeThree() {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    if (roomResizeHandler) {
+        window.removeEventListener('resize', roomResizeHandler);
+        roomResizeHandler = null;
+    }
+
+    transformControls?.dispose?.();
+    orbitControls?.dispose?.();
+    scene?.traverse((object) => {
+        if (!object.isMesh) return;
+        object.geometry?.dispose?.();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.forEach((material) => material?.dispose?.());
+    });
+    renderer?.dispose?.();
+
+    renderer = null;
+    scene = null;
+    camera = null;
+    orbitControls = null;
+    transformControls = null;
+    floorMesh = null;
+    gridHelper = null;
+    wallLines = [];
 }
 
 function _initThree(container) {
@@ -90,13 +142,14 @@ function _initThree(container) {
         if (obj && transformControls.getMode() === 'translate') obj.position.y = 0;
     });
 
-    window.addEventListener('resize', () => {
+    roomResizeHandler = () => {
         const c = document.getElementById('room-canvas');
         if (!c || !renderer) return;
         camera.aspect = c.clientWidth / c.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(c.clientWidth, c.clientHeight);
-    });
+    };
+    window.addEventListener('resize', roomResizeHandler);
 
     renderer.domElement.addEventListener('click', _onCanvasClick);
 
@@ -104,6 +157,8 @@ function _initThree(container) {
     canvasEl.addEventListener('dragover', (e) => { e.preventDefault(); canvasEl.classList.add('drag-over'); });
     canvasEl.addEventListener('dragleave', () => canvasEl.classList.remove('drag-over'));
     canvasEl.addEventListener('drop', (e) => { canvasEl.classList.remove('drag-over'); _onFurnitureDrop(e); });
+
+    _applyRoomContrastTheme();
 }
 
 function _resetCamera() {
@@ -133,6 +188,55 @@ function _updateFloor(w, d) {
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0x94a3b8 }));
     scene.add(line);
     wallLines.push(line);
+
+    _applyRoomContrastTheme();
+}
+
+function _bindContrastEvents() {
+    if (isContrastEventBound) return;
+
+    document.addEventListener('a11y-contrast-change', (event) => {
+        _applyRoomContrastTheme(Boolean(event.detail?.enabled));
+    });
+
+    isContrastEventBound = true;
+}
+
+function _isHighContrastEnabled() {
+    return document.body.classList.contains('high-contrast-mode') || document.documentElement.classList.contains('high-contrast-mode');
+}
+
+function _applyRoomContrastTheme(enabled = _isHighContrastEnabled()) {
+    if (!scene) return;
+
+    const theme = enabled ? ROOM_THEME.highContrast : ROOM_THEME.light;
+    scene.background = new THREE.Color(theme.scene);
+
+    if (renderer) {
+        renderer.setClearColor(theme.scene, 1);
+    }
+
+    if (floorMesh?.material?.color) {
+        floorMesh.material.color.set(theme.floor);
+        floorMesh.material.needsUpdate = true;
+    }
+
+    if (gridHelper) {
+        const materials = Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material];
+        materials.forEach((material) => {
+            if (material?.color) {
+                material.color.set(theme.grid);
+                material.needsUpdate = true;
+            }
+        });
+    }
+
+    wallLines.forEach((line) => {
+        if (line.material?.color) {
+            line.material.color.set(theme.wall);
+            line.material.needsUpdate = true;
+        }
+    });
 }
 
 function _bindUIEvents() {
@@ -148,12 +252,12 @@ function _bindUIEvents() {
             transformControls.setMode('rotate');
             transformControls.showX = false; transformControls.showZ = false;
             btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Rotate Mode';
-            btn.style.background = '#f59e0b';
+            btn.style.background = '#b45309';
         } else {
             transformControls.setMode('translate');
             transformControls.showX = true; transformControls.showZ = true;
             btn.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i> Move Mode';
-            btn.style.background = '#10b981';
+            btn.style.background = '#15803d';
         }
     });
 
@@ -205,6 +309,10 @@ async function _loadFurnitureLibrary() {
             _supabase.from('category').select('*') 
         ]);
 
+        if (strRes.error || furnRes.error || typeRes.error || catRes.error) {
+            throw strRes.error || furnRes.error || typeRes.error || catRes.error;
+        }
+
         allCategories = catRes.data || [];
         allTypes = typeRes.data || [];
 
@@ -228,7 +336,7 @@ async function _loadFurnitureLibrary() {
 
     } catch (err) {
         console.error("Fail to load library:", err);
-        list.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Load Error: ${err.message}</div>`;
+        list.innerHTML = `<div style="color:var(--danger); padding:20px; text-align:center;">Load Error: ${err.message}</div>`;
     }
 }
 
@@ -237,20 +345,20 @@ function _initFilterDropdowns() {
     const typeSelect = document.getElementById('filter-type');
     if (!catSelect || !typeSelect) return;
 
-    catSelect.innerHTML = '<option value="">All Categories</option>';
+    catSelect.replaceChildren(new Option('All Categories', ''));
     allCategories.forEach(c => {
-        catSelect.innerHTML += `<option value="${c.category_id}">${c.category_name}</option>`;
+        catSelect.add(new Option(c.category_name || 'Uncategorized', c.category_id));
     });
 
     catSelect.addEventListener('change', (e) => {
         const selectedCatId = e.target.value;
-        typeSelect.innerHTML = '<option value="">All Types</option>';
+        typeSelect.replaceChildren(new Option('All Types', ''));
         
         if (selectedCatId) {
             typeSelect.disabled = false;
             const validTypes = allTypes.filter(t => t.category_id === selectedCatId);
             validTypes.forEach(t => {
-                typeSelect.innerHTML += `<option value="${t.type_id}">${t.type_name}</option>`;
+                typeSelect.add(new Option(t.type_name || 'Uncategorized', t.type_id));
             });
         } else {
             typeSelect.disabled = true; 
@@ -285,14 +393,19 @@ function _renderFurnitureList() {
         card.dataset.modelUrl = item.model_url;
         card.dataset.structureId = item.structure_id;
         
+        const imageUrl = safeAssetUrl(item.image_url);
         card.innerHTML = `
-            <img src="${item.image_url ?? ''}" onerror="this.style.display='none'">
+            <img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(item.furniture_name || item.structure_id || 'Furniture item')}">
             <div class="fc-info">
-                <div class="fc-id" title="${item.structure_id}">${item.structure_id}</div>
-                <div class="fc-type">${item.type_name}</div>
+                <div class="fc-id" title="${escapeHTML(item.structure_id)}">${escapeHTML(item.structure_id)}</div>
+                <div class="fc-type">${escapeHTML(item.type_name)}</div>
             </div>
             <button class="btn-add-furn" title="Add to center">＋</button>
         `;
+
+        card.querySelector('img')?.addEventListener('error', (event) => {
+            event.currentTarget.style.display = 'none';
+        }, { once: true });
 
         card.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('modelUrl', item.model_url);
@@ -416,40 +529,71 @@ function _clearScene() {
 }
 
 async function _saveRoom() {
-    if (!currentUserId) return _showStatus('Please log in to save rooms.', 'error');
+    if (!currentUserId) {
+        const shouldLogin = window.confirm('You need to log in before saving a room template. Would you like to log in now?');
+        if (shouldLogin) window.location.href = 'cus_login.html?redirect=room';
+        else _showStatus('Log in to save this room template.', 'error');
+        return;
+    }
     const w = parseFloat(document.getElementById('room-width').value) || 10;
     const d = parseFloat(document.getElementById('room-depth').value) || 10;
+    const roomName = document.getElementById('room-name').value.trim() || 'New Room';
     _showStatus('Saving…', 'info');
 
-    if (currentRoomId) {
-        await _supabase.from('room').update({ room_name: document.getElementById('room-name').value, width: w, depth: d }).eq('room_id', currentRoomId);
-    } else {
-        currentRoomId = `room_${Date.now()}`;
-        await _supabase.from('room').insert({ room_id: currentRoomId, user_id: currentUserId, room_name: document.getElementById('room-name').value, width: w, depth: d });
-    }
+    try {
+        let roomId = currentRoomId;
+        if (roomId) {
+            const { error } = await _supabase
+                .from('room')
+                .update({ room_name: roomName, width: w, depth: d })
+                .eq('room_id', roomId);
+            if (error) throw error;
+        } else {
+            roomId = `room_${Date.now()}`;
+            const { error } = await _supabase
+                .from('room')
+                .insert({ room_id: roomId, user_id: currentUserId, room_name: roomName, width: w, depth: d });
+            if (error) throw error;
+            currentRoomId = roomId;
+        }
 
-    await _supabase.from('room_item').delete().eq('room_id', currentRoomId);
-    const inserts = [];
-    for (const [, entry] of placedItems) {
-        const ri_id = `ri_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        inserts.push({
-            room_item_id: ri_id, room_id: currentRoomId, structure_id: entry.structureId,
-            position_x: entry.mesh.position.x, position_y: entry.mesh.position.y, position_z: entry.mesh.position.z,
-            rotation_x: entry.mesh.rotation.x, rotation_y: entry.mesh.rotation.y, rotation_z: entry.mesh.rotation.z,
-            scale_x: entry.mesh.scale.x, scale_y: entry.mesh.scale.y, scale_z: entry.mesh.scale.z
-        });
-        entry.roomItemId = ri_id;
-    }
+        const { error: deleteError } = await _supabase.from('room_item').delete().eq('room_id', roomId);
+        if (deleteError) throw deleteError;
 
-    if (inserts.length) await _supabase.from('room_item').insert(inserts);
-    _showStatus(`Room saved!`, 'success');
-    await _loadSavedRooms();
+        const inserts = [];
+        for (const [, entry] of placedItems) {
+            const ri_id = `ri_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+            inserts.push({
+                room_item_id: ri_id, room_id: roomId, structure_id: entry.structureId,
+                position_x: entry.mesh.position.x, position_y: entry.mesh.position.y, position_z: entry.mesh.position.z,
+                rotation_x: entry.mesh.rotation.x, rotation_y: entry.mesh.rotation.y, rotation_z: entry.mesh.rotation.z,
+                scale_x: entry.mesh.scale.x, scale_y: entry.mesh.scale.y, scale_z: entry.mesh.scale.z
+            });
+            entry.roomItemId = ri_id;
+        }
+
+        if (inserts.length) {
+            const { error: insertError } = await _supabase.from('room_item').insert(inserts);
+            if (insertError) throw insertError;
+        }
+
+        _showStatus('Room saved!', 'success');
+        await _loadSavedRooms();
+    } catch (error) {
+        console.error('Failed to save room:', error);
+        _showStatus(`Unable to save room: ${error.message || 'please try again.'}`, 'error');
+    }
 }
 
 async function _loadSavedRooms() {
     const sel = document.getElementById('room-select');
     if (!sel || !currentUserId) return;
-    const { data } = await _supabase.from('room').select('room_id, room_name').eq('user_id', currentUserId).order('update_at', { ascending: false });
+    const { data, error } = await _supabase.from('room').select('room_id, room_name').eq('user_id', currentUserId).order('update_at', { ascending: false });
+    if (error) {
+        console.error('Failed to load saved rooms:', error);
+        _showStatus('Unable to load saved rooms.', 'error');
+        return;
+    }
     while (sel.options.length > 1) sel.remove(1);
     (data ?? []).forEach(r => {
         const opt = document.createElement('option'); opt.value = r.room_id; opt.textContent = r.room_name; sel.appendChild(opt);
@@ -459,8 +603,12 @@ async function _loadSavedRooms() {
 async function _loadRoom(roomId) {
     _showStatus('Loading room…', 'info');
     _clearScene();
-    const { data: room } = await _supabase.from('room').select('*').eq('room_id', roomId).single();
-    if (!room) return;
+    const { data: room, error: roomError } = await _supabase.from('room').select('*').eq('room_id', roomId).single();
+    if (roomError || !room) {
+        console.error('Failed to load room:', roomError);
+        _showStatus('Unable to load this room.', 'error');
+        return;
+    }
 
     currentRoomId = roomId;
     document.getElementById('room-name').value = room.room_name;
@@ -469,7 +617,12 @@ async function _loadRoom(roomId) {
     _updateFloor(room.width, room.depth);
     _resetCamera(); 
 
-    const { data: items } = await _supabase.from('room_item').select('*, structure(structure_id, model_url)').eq('room_id', roomId);
+    const { data: items, error: itemsError } = await _supabase.from('room_item').select('*, structure(structure_id, model_url)').eq('room_id', roomId);
+    if (itemsError) {
+        console.error('Failed to load room items:', itemsError);
+        _showStatus('Room details could not be loaded.', 'error');
+        return;
+    }
     if (!items?.length) return _showStatus('Room loaded (empty).', 'success');
 
     for (const item of items) {
@@ -526,19 +679,23 @@ async function _handleAddToCart() {
         return _showStatus('Cart Error: ' + insertErr.message, 'error');
     }
 
+    document.dispatchEvent(new Event('cart-updated'));
     _showStatus(`✓ ${inserts.length} item(s) added to cart!`, 'success');
 }
 
 function _showStatus(msg, type = 'info') {
     const el = document.getElementById('room-status');
     if (!el) return;
-    el.textContent = msg; el.style.color = { info: '#3b82f6', success: '#10b981', error: '#ef4444' }[type]; el.style.display = 'block';
+    el.textContent = msg; el.style.color = { info: '#1d4ed8', success: '#15803d', error: '#b91c1c' }[type]; el.style.display = 'block';
     clearTimeout(el._timeout); el._timeout = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 function _animate() {
-    if (!document.getElementById('room-canvas')) return;
-    requestAnimationFrame(_animate);
+    if (!renderer || !scene || !camera || !renderer.domElement.isConnected) {
+        animationFrameId = null;
+        return;
+    }
+    animationFrameId = requestAnimationFrame(_animate);
     orbitControls?.update();
     renderer.render(scene, camera);
 }

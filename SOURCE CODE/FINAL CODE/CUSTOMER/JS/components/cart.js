@@ -1,5 +1,6 @@
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js';
 import { loadCustomerContent } from '../script.js';
+import { escapeHTML, safeAssetUrl, safeNumber } from '../utils/dom.js';
 
 let cartItemsData = [];
 
@@ -101,37 +102,39 @@ function renderCartItems() {
         const struct = item.structure || {};
         const furn = struct.furniture || {};
 
-        const furName = furn.furniture_name || '<span style="color:red;">⚠️ 找不到 Furniture 表关联</span>';
-        const structName = struct.structure_name || '<span style="color:red;">⚠️ 找不到 Structure 表关联</span>';
+        const furName = furn.furniture_name || 'Furniture unavailable';
+        const structName = struct.structure_name || 'Variant unavailable';
         
         const colour = struct.colour || 'Default';
-        const price = Number(struct.price || 0);
-        const qty = Number(item.quantity || 1);
+        const price = safeNumber(struct.price);
+        const qty = Math.max(1, safeNumber(item.quantity, 1));
         const subtotal = price * qty;
         const outOfStock = Number(struct.stock || 0) < qty;
+        const imageUrl = safeAssetUrl(struct.image_url, 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png');
 
         const card = document.createElement('div');
+        card.className = 'cart-item-card';
         card.style.cssText = "display: flex; gap: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.2s;";
         
         card.innerHTML = `
-            <input type="checkbox" class="cart-checkbox" data-id="${item.cart_item_id}" data-price="${price}" data-qty="${qty}" 
-                   style="width: 20px; height: 20px; cursor: pointer;" ${outOfStock ? 'disabled' : ''}>
+            <input type="checkbox" class="cart-checkbox" aria-label="Select ${escapeHTML(furn.furniture_name || 'cart item')}" data-id="${escapeHTML(item.cart_item_id)}" data-price="${price}" data-qty="${qty}"
+                    style="width: 20px; height: 20px; cursor: pointer;" ${outOfStock ? 'disabled' : ''}>
             
-            <img src="${struct.image_url || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png'}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #f1f5f9;">
+            <img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(furn.furniture_name || 'Furniture item')}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #f1f5f9;">
             
             <div style="flex-grow: 1;">
-                <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #1e2937;">${furName}</h3>
-                <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">${structName} • ${colour}</p>
-                ${outOfStock ? `<span style="color:#e74c3c; font-size:13px; font-weight:bold;">⚠️ Not enough stock</span>` : ''}
+                <h3 style="margin: 0 0 5px 0; font-size: 18px; color: #1e2937;">${escapeHTML(furName)}</h3>
+                <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">${escapeHTML(structName)} • ${escapeHTML(colour)}</p>
+                ${outOfStock ? `<span style="color:var(--danger); font-size:13px; font-weight:bold;">⚠️ Not enough stock</span>` : ''}
             </div>
 
             <div style="text-align: right; min-width: 120px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
                 <div>
-                    <div style="font-size: 18px; font-weight: bold; color: #1e2937; margin-bottom: 5px;">RM ${subtotal.toFixed(2)}</div>
+                    <div class="price-text" style="font-size: 18px; font-weight: bold; color: var(--price); margin-bottom: 5px;">RM ${subtotal.toFixed(2)}</div>
                     <div style="font-size: 13px; color: #64748b;">RM ${price.toFixed(2)} x ${qty}</div>
                 </div>
                 
-                <button class="btn-delete-cart-item" title="Remove Item" style="background: none; border: none; color: #ef4444; font-size: 18px; cursor: pointer; padding: 5px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
+                <button class="btn-delete-cart-item" type="button" aria-label="Remove ${escapeHTML(furn.furniture_name || 'item')} from cart" title="Remove item" style="background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 5px; transition: opacity 0.2s;">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
@@ -139,6 +142,8 @@ function renderCartItems() {
 
         const deleteBtn = card.querySelector('.btn-delete-cart-item');
         deleteBtn.addEventListener('click', () => handleDeleteItem(item.cart_item_id));
+        deleteBtn.addEventListener('mouseenter', () => { deleteBtn.style.opacity = '0.7'; });
+        deleteBtn.addEventListener('mouseleave', () => { deleteBtn.style.opacity = '1'; });
 
         container.appendChild(card);
     });
@@ -165,6 +170,7 @@ async function handleDeleteItem(cartItemId) {
         if (error) throw error;
 
         cartItemsData = cartItemsData.filter(item => item.cart_item_id !== cartItemId);
+        document.dispatchEvent(new Event('cart-updated'));
 
         if (cartItemsData.length === 0) {
             renderEmptyCart();

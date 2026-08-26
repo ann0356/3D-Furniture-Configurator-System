@@ -1,5 +1,6 @@
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js';
 import { loadCustomerContent } from '../script.js';
+import { escapeHTML, safeAssetUrl, safeNumber } from '../utils/dom.js';
 
 let currentUserInfo = null;
 let allOrders = [];
@@ -77,7 +78,7 @@ async function updateProfile(userId) {
         alert("Failed to update profile.");
         btn.innerText = "Update Profile";
     } else {
-        btn.style.background = "#2ecc71";
+        btn.style.background = "#15803d";
         btn.innerText = "Updated Successfully!";
         setTimeout(() => {
             btn.style.background = "#1e2937";
@@ -128,24 +129,25 @@ function renderOrdersList(viewType) {
     }
 
     filteredOrders.forEach(order => {
-        let statusColor = "#3b82f6";
-        if (order.status.toLowerCase() === 'delivered') statusColor = "#2ecc71"; // 绿
-        if (order.status.toLowerCase() === 'cancelled') statusColor = "#e74c3c"; // 红
+        let statusColor = "var(--brand)";
+        if (order.status.toLowerCase() === 'delivered') statusColor = "var(--success)";
+        if (order.status.toLowerCase() === 'cancelled') statusColor = "var(--danger)";
 
         const formattedDate = new Date(order.created_at).toLocaleDateString('en-MY', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         let itemsHtml = '';
         order.order_item.forEach(item => {
             const snap = item.snapshot_info || {};
+            const imageUrl = safeAssetUrl(snap.image, 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png');
             itemsHtml += `
                 <div style="display: flex; gap: 15px; margin-top: 15px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px;">
-                    <img src="${snap.image || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png'}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(snap.name || 'Order item')}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
                     <div style="flex-grow: 1;">
-                        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #1e2937;">${snap.name || 'Unknown Item'}</h4>
-                        <p style="margin: 0; font-size: 12px; color: #64748b;">Variant: ${snap.variant} • ${snap.colour}</p>
+                        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #1e2937;">${escapeHTML(snap.name || 'Unknown Item')}</h4>
+                        <p style="margin: 0; font-size: 12px; color: #64748b;">Variant: ${escapeHTML(snap.variant || 'N/A')} • ${escapeHTML(snap.colour || 'N/A')}</p>
                     </div>
                     <div style="text-align: right; font-size: 13px; color: #475569;">
-                        RM ${Number(item.unit_price).toFixed(2)} x ${item.quantity}
+                        RM ${safeNumber(item.unit_price).toFixed(2)} x ${safeNumber(item.quantity, 1)}
                     </div>
                 </div>
             `;
@@ -154,7 +156,7 @@ function renderOrdersList(viewType) {
         let actionBtnHtml = '';
         if (order.status.toLowerCase() === 'order placed') {
             actionBtnHtml = `
-                <button class="btn-cancel-order" data-id="${order.order_id}" style="margin-top: 10px; padding: 6px 12px; background: transparent; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e74c3c'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='#e74c3c';">
+                <button class="btn-cancel-order" data-id="${escapeHTML(order.order_id)}" style="margin-top: 10px; padding: 6px 12px; background: transparent; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
                     Cancel Order
                 </button>
             `;
@@ -165,12 +167,12 @@ function renderOrdersList(viewType) {
         orderCard.innerHTML = `
             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
                 <div>
-                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #64748b;">Order ID: ${order.order_id}</p>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #64748b;">Order ID: ${escapeHTML(order.order_id)}</p>
                     <p style="margin: 0; font-size: 13px; color: #475569;"><i class="fa-regular fa-clock"></i> ${formattedDate}</p>
                 </div>
                 <div style="text-align: right;">
                     <span style="display: inline-block; padding: 4px 10px; background: ${statusColor}15; color: ${statusColor}; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase;">
-                        ${order.status}
+                        ${escapeHTML(order.status)}
                     </span>
                     <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #1e2937;">Total: RM ${Number(order.total_amount).toFixed(2)}</p>
                     ${actionBtnHtml}
@@ -183,10 +185,12 @@ function renderOrdersList(viewType) {
         container.appendChild(orderCard);
     });
 
-    const cancelBtns = document.querySelectorAll('.btn-cancel-order');
-    cancelBtns.forEach(btn => {
-        btn.addEventListener('click', handleCancelOrder);
-    });
+        const cancelBtns = document.querySelectorAll('.btn-cancel-order');
+        cancelBtns.forEach(btn => {
+            btn.addEventListener('click', handleCancelOrder);
+            btn.addEventListener('mouseenter', () => { btn.style.background = '#e74c3c'; btn.style.color = 'white'; });
+            btn.addEventListener('mouseleave', () => { btn.style.background = 'transparent'; btn.style.color = '#e74c3c'; });
+        });
 }
 
 function bindOrderTabs() {
@@ -194,10 +198,12 @@ function bindOrderTabs() {
     const tabHistory = document.getElementById('tab-history');
 
     const setActiveStyle = (activeBtn, inactiveBtn) => {
-        activeBtn.style.color = "#3b82f6";
-        activeBtn.style.borderBottom = "3px solid #3b82f6";
+        activeBtn.style.color = "var(--brand)";
+        activeBtn.style.borderBottom = "3px solid var(--brand)";
         inactiveBtn.style.color = "#64748b";
         inactiveBtn.style.borderBottom = "3px solid transparent";
+        activeBtn.setAttribute('aria-pressed', 'true');
+        inactiveBtn.setAttribute('aria-pressed', 'false');
     };
 
     tabActive.onclick = () => {

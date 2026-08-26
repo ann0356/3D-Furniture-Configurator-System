@@ -1,23 +1,23 @@
 <style>
-    .home-banner-container { position: relative; width: 100%; height: 500px; overflow: hidden; border-radius: 12px; margin-bottom: 40px; background: #000; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+    .home-banner-container { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 16px; margin-bottom: 32px; background: #0f172a; box-shadow: 0 10px 25px -5px rgba(15,23,42,0.14); }
     .banner-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s ease-in-out; display: flex; justify-content: center; align-items: center; z-index: 1; }
     .banner-slide.active { opacity: 1; z-index: 10; }
-    .banner-slide img, .banner-slide iframe { width: 100%; height: 100%; object-fit: cover; border: none; }
+    .banner-slide img, .banner-slide iframe { width: 100%; height: 100%; object-fit: contain; border: none; }
     
-    .banner-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.7); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; color: #1e293b; cursor: pointer; z-index: 20; transition: background 0.2s, transform 0.2s; display: flex; justify-content: center; align-items: center; }
+    .banner-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; color: #0f172a; cursor: pointer; z-index: 20; transition: background 0.2s, transform 0.2s; display: flex; justify-content: center; align-items: center; }
     .banner-btn:hover { background: rgba(255,255,255,1); transform: translateY(-50%) scale(1.1); }
     .prev-btn { left: 20px; }
     .next-btn { right: 20px; }
 
     .banner-indicators { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 20; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+    .dot { width: 10px; height: 10px; padding: 0; border: none; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: background 0.3s, transform 0.3s; }
     .dot.active { background: white; transform: scale(1.3); }
 
     .home-panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .nav-panel { background: white; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }
-    .nav-panel:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
-    .nav-panel i { font-size: 40px; color: #3b82f6; margin-bottom: 15px; }
-    .nav-panel h3 { margin: 0 0 10px 0; font-size: 20px; color: #1e293b; }
+    .nav-panel { background: white; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; text-decoration: none; color: inherit; display: block; }
+    .nav-panel:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(15,23,42,0.12); border-color: #1d4ed8; }
+    .nav-panel i { font-size: 40px; color: #1d4ed8; margin-bottom: 15px; }
+    .nav-panel h3 { margin: 0 0 10px 0; font-size: 20px; color: #0f172a; }
     .nav-panel p { margin: 0; font-size: 14px; color: #64748b; }
 </style>
 
@@ -25,8 +25,8 @@
     
     <div class="home-banner-container">
         
-        <button class="banner-btn prev-btn" id="banner-prev"><i class="fa-solid fa-chevron-left"></i></button>
-        <button class="banner-btn next-btn" id="banner-next"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="banner-btn prev-btn" id="banner-prev" type="button" aria-label="Show previous promotion"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+        <button class="banner-btn next-btn" id="banner-next" type="button" aria-label="Show next promotion"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
 
         <div class="banner-slide active">
             <img src="https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/advertisement1.jpg" alt="Promo 1">
@@ -41,27 +41,27 @@
         </div>
 
         <div class="banner-indicators" id="banner-dots">
-            <span class="dot active" data-index="0"></span>
-            <span class="dot" data-index="1"></span>
-            <span class="dot" data-index="2"></span>
+            <button class="dot active" type="button" data-index="0" aria-label="Show promotion 1" aria-current="true"></button>
+            <button class="dot" type="button" data-index="1" aria-label="Show promotion 2" aria-current="false"></button>
+            <button class="dot" type="button" data-index="2" aria-label="Show promotion 3" aria-current="false"></button>
         </div>
     </div>
 
     <div class="home-panels">
-        <div class="nav-panel cus-nav-link" data-page="aboutUs">
+        <a href="#" class="nav-panel cus-nav-link" data-page="aboutUs" aria-label="Learn about Ruma Furniture">
             <i class="fa-solid fa-circle-info"></i>
             <h3>About Us</h3>
             <p>Discover our story and craftsmanship.</p>
-        </div>
-        <div class="nav-panel cus-nav-link" data-page="storeLocation">
+        </a>
+        <a href="#" class="nav-panel cus-nav-link" data-page="storeLocation" aria-label="Find a Ruma showroom">
             <i class="fa-solid fa-location-dot"></i>
             <h3>Store Location</h3>
             <p>Find a Ruma showroom near you.</p>
-        </div>
-        <div class="nav-panel cus-nav-link" data-page="contactUs">
+        </a>
+        <a href="#" class="nav-panel cus-nav-link" data-page="contactUs" aria-label="Contact Ruma Furniture support">
             <i class="fa-solid fa-envelope"></i>
             <h3>Contact Us</h3>
             <p>Get in touch with our support team.</p>
-        </div>
+        </a>
     </div>
 </div>

@@ -1,12 +1,12 @@
 <div class="cus-page-root" style="padding: 40px 20px; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 40px;">
-        <h1 style="font-size: 32px; color: #1e293b; margin: 0 0 10px 0;">Connect with ruma</h1>
+        <h1 class="page-heading" style="font-size: 32px; color: #0f172a; margin: 0 0 10px 0;">Connect with ruma</h1>
         <p style="color: #64748b; font-size: 16px;">We'd love to hear from you. Send us a message or contact our stores directly.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+    <div class="contact-layout" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         
-        <aside style="border-right: 1px solid #f1f5f9; padding-right: 20px;">
+        <aside class="contact-sidebar" style="border-right: 1px solid #f1f5f9; padding-right: 20px;">
             <h3 style="margin-top: 0; color: #0f172a; margin-bottom: 25px;">Contact Information</h3>
             
             <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 25px;">
@@ -65,39 +65,39 @@
 
         <div>
             <form id="contact-form" style="display: flex; flex-direction: column; gap: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="contact-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Your Name <span style="color:red">*</span></label>
+                        <label for="cf-name" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Your Name <span style="color:var(--danger)">*</span></label>
                         <input type="text" id="cf-name" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
                     </div>
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Mobile Number <span style="color:red">*</span></label>
+                        <label for="cf-phone" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Mobile Number <span style="color:var(--danger)">*</span></label>
                         <input type="tel" id="cf-phone" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="contact-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Email Address <span style="color:red">*</span></label>
+                        <label for="cf-email" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Email Address <span style="color:var(--danger)">*</span></label>
                         <input type="email" id="cf-email" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
                     </div>
                     <div>
-                        <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Order Number (if applicable)</label>
+                        <label for="cf-order" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Order Number (if applicable)</label>
                         <input type="text" id="cf-order" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
                     </div>
                 </div>
 
                 <div>
-                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Subject</label>
+                    <label for="cf-subject" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Subject</label>
                     <input type="text" id="cf-subject" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
                 </div>
 
                 <div>
-                    <label style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Message <span style="color:red">*</span></label>
+                    <label for="cf-message" style="display:block; margin-bottom:5px; font-size:13px; font-weight:bold; color:#475569;">Message <span style="color:var(--danger)">*</span></label>
                     <textarea id="cf-message" required rows="5" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; resize:vertical;"></textarea>
                 </div>
 
-                <button type="submit" id="cf-submit-btn" style="background:#1e293b; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">Send Message</button>
+                <button type="submit" id="cf-submit-btn" style="background:#0f172a; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">Send Message</button>
             </form>
         </div>
     </div>

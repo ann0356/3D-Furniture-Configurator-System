@@ -7,6 +7,7 @@ import { initProfile } from './components/profile.js';
 import { initRoom } from './components/room.js';
 import { initHome } from './components/home.js'; 
 import { initContactUs } from './components/contactUs.js'; 
+import { escapeHTML, safeAssetUrl, safeNumber } from './utils/dom.js';
 
 const mainContent = document.getElementById('main-content');
 
@@ -16,7 +17,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     initAccessibilityTools();
 
     initSearchControls();
+    initAccountMenu();
     checkLoginStatus();
+    document.addEventListener('cart-updated', updateCartBadge);
     setupStaticNavBindings();
     await loadNavbarCategories();
 
@@ -42,7 +45,9 @@ function initAccessibilityTools() {
     if (!triggerBtn || !panel) return; 
 
     triggerBtn.addEventListener('click', () => {
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        const isOpening = panel.style.display === 'none';
+        panel.style.display = isOpening ? 'block' : 'none';
+        triggerBtn.setAttribute('aria-expanded', String(isOpening));
     });
 
     let currentFontScale = parseFloat(localStorage.getItem('a11y-font-scale')) || 1.0;
@@ -60,30 +65,53 @@ function initAccessibilityTools() {
         localStorage.setItem('a11y-font-scale', currentFontScale);
     }
 
-    btnIncrease.addEventListener('click', () => applyFontScale(currentFontScale + 0.1));
-    btnDecrease.addEventListener('click', () => applyFontScale(currentFontScale - 0.1));
-    btnReset.addEventListener('click', () => applyFontScale(1.0));
+    btnIncrease?.addEventListener('click', () => applyFontScale(currentFontScale + 0.1));
+    btnDecrease?.addEventListener('click', () => applyFontScale(currentFontScale - 0.1));
+    btnReset?.addEventListener('click', () => applyFontScale(1.0));
 
     function applyContrast(enable) {
         isHighContrast = enable;
 
         const logoImg = document.querySelector('#brand-logo img');
 
+        document.body.classList.toggle('high-contrast-mode', enable);
+        document.documentElement.classList.toggle('high-contrast-mode', enable);
+
+        if (btnContrast) {
+            btnContrast.setAttribute('aria-pressed', String(enable));
+            btnContrast.textContent = enable ? 'Disable High Contrast' : 'Enable High Contrast';
+        }
+
         if (enable) {
-            document.body.classList.add('high-contrast-mode');
             if (logoImg) {
                 logoImg.src = "https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/Ruma_white_logo.png";
             }
         } else {
-            document.body.classList.remove('high-contrast-mode');
             if (logoImg) {
                 logoImg.src = "https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/Ruma_Logo_black.png";
             }
         }
+
         localStorage.setItem('a11y-high-contrast', enable);
+        document.dispatchEvent(new CustomEvent('a11y-contrast-change', { detail: { enabled: enable } }));
     }
 
-    btnContrast.addEventListener('click', () => applyContrast(!isHighContrast));
+    btnContrast?.addEventListener('click', () => applyContrast(!isHighContrast));
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && panel.style.display !== 'none') {
+            panel.style.display = 'none';
+            triggerBtn.setAttribute('aria-expanded', 'false');
+            triggerBtn.focus();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!panel.contains(event.target) && !triggerBtn.contains(event.target) && panel.style.display !== 'none') {
+            panel.style.display = 'none';
+            triggerBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
 }
 
 window.addEventListener('popstate', async (event) => {
@@ -119,6 +147,7 @@ export async function loadCustomerContent(pageName, extraParams = null, isHistor
         
         const html = await response.text();
         mainContent.innerHTML = html;
+        updateNavigationState(pageName);
 
         if (pageName === 'product_list' && extraParams) {
             await initProductList(extraParams);
@@ -140,7 +169,7 @@ export async function loadCustomerContent(pageName, extraParams = null, isHistor
 
     } catch (error) {
         console.error("Routing Error: ", error);
-        mainContent.innerHTML = "<h2 style='padding: 40px; text-align: center; color: #e74c3c;'>Failed to load page.</h2>";
+        mainContent.innerHTML = "<h2 style='padding: 40px; text-align: center; color: var(--danger);'>Failed to load page.</h2>";
     }
 }
 
@@ -204,13 +233,15 @@ function initSearchControls() {
     if (searchButton && searchPanel) {
         searchButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            if (searchPanel.style.display === 'block') {
+            const isOpen = searchPanel.style.display === 'block';
+            if (isOpen) {
                 searchPanel.style.display = 'none';
                 if (resultPanel) resultPanel.style.display = 'none';
             } else {
                 searchPanel.style.display = 'block';
                 if (searchInput) { searchInput.value = ''; searchInput.focus(); }
             }
+            searchButton.setAttribute('aria-expanded', String(!isOpen));
         });
     }
     [searchPanel, resultPanel].forEach(panel => { if (panel) panel.onclick = (e) => e.stopPropagation(); });
@@ -218,6 +249,7 @@ function initSearchControls() {
         if (searchContainer && !searchContainer.contains(event.target)) {
             if (searchPanel) searchPanel.style.display = 'none';
             if (resultPanel) resultPanel.style.display = 'none';
+            if (searchButton) searchButton.setAttribute('aria-expanded', 'false');
         }
     });
 
@@ -280,28 +312,99 @@ function initSearchControls() {
             }, 400);
         });
     }
-    // 👆 ========================================= 👆
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && searchPanel?.style.display === 'block') {
+            searchPanel.style.display = 'none';
+            if (resultPanel) resultPanel.style.display = 'none';
+            searchButton?.setAttribute('aria-expanded', 'false');
+            searchButton?.focus();
+        }
+    });
+}
+
+function updateNavigationState(pageName) {
+    const informationPages = new Set(['aboutUs', 'storeLocation', 'contactUs']);
+    const brandLogo = document.getElementById('brand-logo');
+
+    document.querySelectorAll('header .menu .nav-link').forEach(link => {
+        const isActive = link.dataset.page === pageName;
+        link.classList.toggle('is-active', isActive);
+        if (isActive) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+    });
+
+    if (brandLogo) {
+        const isBrandSection = !informationPages.has(pageName);
+        brandLogo.classList.toggle('is-active', isBrandSection);
+        if (isBrandSection) brandLogo.setAttribute('aria-current', 'page');
+        else brandLogo.removeAttribute('aria-current');
+    }
+}
+
+function initAccountMenu() {
+    const account = document.querySelector('.user-account');
+    const trigger = document.querySelector('.account-trigger');
+    if (!account || !trigger) return;
+
+    const closeMenu = (returnFocus = false) => {
+        account.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (returnFocus) trigger.focus();
+    };
+
+    trigger.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpening = !account.classList.contains('is-open');
+        account.classList.toggle('is-open', isOpening);
+        trigger.setAttribute('aria-expanded', String(isOpening));
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!account.contains(event.target)) closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && account.classList.contains('is-open')) closeMenu(true);
+    });
 }
 
 async function checkLoginStatus() {
     const loggedOutLinks = document.querySelectorAll('.logged-out-only');
     const loggedInLinks = document.querySelectorAll('.logged-in-only');
     const navLogoutBtn = document.getElementById('nav-logout-btn');
+    const accountTrigger = document.querySelector('.account-trigger');
+    const accountIcon = accountTrigger?.querySelector('.account-state-icon');
+
+    const setAccountMenuState = (isLoggedIn) => {
+        loggedOutLinks.forEach(link => { link.hidden = isLoggedIn; });
+        loggedInLinks.forEach(link => { link.hidden = !isLoggedIn; });
+
+        if (accountTrigger) {
+            accountTrigger.setAttribute('aria-label', isLoggedIn ? 'Open account menu, signed in' : 'Open account menu, signed out');
+        }
+        if (accountIcon) {
+            accountIcon.className = isLoggedIn
+                ? 'account-state-icon fa-solid fa-user-check'
+                : 'account-state-icon fa-regular fa-user';
+        }
+    };
+
     try {
         const { data: { session } } = await _supabase.auth.getSession();
-        if (session && session.user) {
-            loggedOutLinks.forEach(link => link.style.display = 'none');
-            loggedInLinks.forEach(link => link.style.display = 'block');
-        } else {
-            loggedOutLinks.forEach(link => link.style.display = 'block');
-            loggedInLinks.forEach(link => link.style.display = 'none');
-        }
-    } catch (err) { console.error(err); }
+        setAccountMenuState(Boolean(session?.user));
+    } catch (err) {
+        console.error(err);
+        setAccountMenuState(false);
+    }
+
+    await updateCartBadge();
 
     if (navLogoutBtn) {
         navLogoutBtn.onclick = async (e) => {
             e.preventDefault();
             await _supabase.auth.signOut();
+            updateCartBadge();
             alert("Logout successfully!");
             window.location.href = 'cus_index.html?page=home'; 
         };
@@ -312,6 +415,7 @@ function renderSearchResults(structures) {
     const container = document.getElementById('products-container');
     const resultPanel = document.querySelector('.result-panel'); 
     const searchPanel = document.querySelector('.search-panel'); 
+    const searchButton = document.querySelector('.search-icon');
     
     if (!container) return;
     container.innerHTML = '';
@@ -325,20 +429,23 @@ function renderSearchResults(structures) {
         const furniture = item.furniture || {};
         const type = furniture.type || {};
         const category = type.category || {};
-        const finalImageUrl = item.image_url ? item.image_url : 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_white.png';
-        const stock = Number(item.stock || 0);
+        const fallbackImage = 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_white.png';
+        const finalImageUrl = safeAssetUrl(item.image_url, fallbackImage);
+        const stock = safeNumber(item.stock);
         let stockHtml = '';
 
         if (stock >= 100) {
-            stockHtml = `<span style="color: #2ecc71; font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;"><i class="fa-solid fa-box-open"></i> In Stock</span>`;
+            stockHtml = `<span style="color: var(--success); font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;"><i class="fa-solid fa-box-open"></i> In Stock</span>`;
         } else if (stock > 0) {
-            stockHtml = `<span style="color: #e67e22; font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;">Only ${stock} left</span>`;
+            stockHtml = `<span style="color: var(--price); font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;">Only ${stock} left</span>`;
         } else {
-            stockHtml = `<span style="color: #e74c3c; font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;">Out of stock</span>`;
+            stockHtml = `<span style="color: var(--danger); font-size: calc(0.75rem * var(--font-scale)); font-weight: bold;">Out of stock</span>`;
         }
 
-        const productCard = document.createElement('div');
+        const productCard = document.createElement('button');
+        productCard.type = 'button';
         productCard.className = 'product-card';
+        productCard.setAttribute('aria-label', `View ${furniture.furniture_name || 'product'} details`);
         productCard.style.cursor = 'pointer';
         productCard.style.transition = 'background-color 0.2s';
         
@@ -347,25 +454,74 @@ function renderSearchResults(structures) {
         
         productCard.innerHTML = `
             <div class="product-img-box">
-                <img src="${finalImageUrl}" alt="${furniture.furniture_name || 'furniture'}" onerror="this.src='https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ruma_logo_white.png'">
+                <img src="${escapeHTML(finalImageUrl)}" alt="${escapeHTML(furniture.furniture_name || 'furniture')}">
             </div>
             <div class="product-info">
-                <span class="product-category" style="font-size:calc(0.8rem * var(--font-scale));">${category.category_name || 'N/A'} / ${type.type_name || 'N/A'}</span>
-                <h3 style="color: var(--text-main);">${furniture.furniture_name || 'Item'} <span style="font-weight: normal; color: var(--text-hover); font-size: calc(0.85rem * var(--font-scale));">(${item.colour})</span></h3>
+                <span class="product-category" style="font-size:calc(0.8rem * var(--font-scale));">${escapeHTML(category.category_name || 'N/A')} / ${escapeHTML(type.type_name || 'N/A')}</span>
+                <h3 style="color: var(--text-main);">${escapeHTML(furniture.furniture_name || 'Item')} <span style="font-weight: normal; color: var(--text-hover); font-size: calc(0.85rem * var(--font-scale));">(${escapeHTML(item.colour || 'N/A')})</span></h3>
                 <div style="margin: 4px 0;">${stockHtml}</div>
-                <p class="product-material" style="font-size: calc(0.8rem * var(--font-scale)); color: var(--text-hover); margin: 2px 0;">${item.material}</p>
-                <p class="product-price" style="font-weight: bold; color: #e67e22;">RM ${item.price}</p>
+                <p class="product-material" style="font-size: calc(0.8rem * var(--font-scale)); color: var(--text-hover); margin: 2px 0;">${escapeHTML(item.material || 'N/A')}</p>
+                <p class="product-price" style="font-weight: bold; color: var(--price);">RM ${safeNumber(item.price).toFixed(2)}</p>
             </div>
         `;
+
+        const image = productCard.querySelector('img');
+        image?.addEventListener('error', () => { image.src = fallbackImage; }, { once: true });
         
         productCard.onclick = () => {
             if (furniture.furniture_id) {
                 loadCustomerContent('product_details', { id: furniture.furniture_id });
                 if (resultPanel) resultPanel.style.display = 'none';
                 if (searchPanel) searchPanel.style.display = 'none';
+                searchButton?.setAttribute('aria-expanded', 'false');
             }
         };
 
         container.appendChild(productCard);
     });
+}
+
+async function updateCartBadge() {
+    const badge = document.getElementById('cart-count-badge');
+    if (!badge) return;
+
+    const setCount = (count) => {
+        const normalizedCount = Math.max(0, Number(count) || 0);
+        const hasItems = normalizedCount > 0;
+        badge.hidden = !hasItems;
+        badge.textContent = normalizedCount > 99 ? '99+' : String(normalizedCount);
+        badge.setAttribute('aria-label', `${normalizedCount} item${normalizedCount === 1 ? '' : 's'} in cart`);
+    };
+
+    try {
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (!session?.user) {
+            setCount(0);
+            return;
+        }
+
+        const { data: cart, error: cartError } = await _supabase
+            .from('cart')
+            .select('cart_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+        if (cartError) throw cartError;
+        if (!cart) {
+            setCount(0);
+            return;
+        }
+
+        const { data: items, error: itemsError } = await _supabase
+            .from('cart_item')
+            .select('quantity')
+            .eq('cart_id', cart.cart_id)
+            .is('room_item_id', null);
+
+        if (itemsError) throw itemsError;
+        setCount((items || []).reduce((total, item) => total + safeNumber(item.quantity, 0), 0));
+    } catch (error) {
+        console.error('Unable to update cart badge:', error);
+        setCount(0);
+    }
 }

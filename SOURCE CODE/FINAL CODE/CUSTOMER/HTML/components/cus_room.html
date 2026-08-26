@@ -19,17 +19,17 @@
 
   /* ── Inputs & Buttons ── */
   .rp-input         { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #1e293b; background: #f8fafc; width: 90px; transition: border-color .15s; }
-  .rp-input:focus   { outline: none; border-color: #3b82f6; }
+  .rp-input:focus   { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.16); }
   .rp-select        { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #1e293b; background: #f8fafc; cursor: pointer; }
   .rp-btn           { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; font-size: 13px; font-weight: 600; border: none; border-radius: 7px; cursor: pointer; transition: filter .15s, transform .1s; white-space: nowrap; }
   .rp-btn:hover     { filter: brightness(1.1); }
   .rp-btn:active    { transform: scale(.97); }
   
-  .rp-btn-blue      { background: #3b82f6; color: #fff; }
-  .rp-btn-green     { background: #10b981; color: #fff; }
-  .rp-btn-amber     { background: #f59e0b; color: #fff; }
+  .rp-btn-blue      { background: #1d4ed8; color: #fff; }
+  .rp-btn-green     { background: #15803d; color: #fff; }
+  .rp-btn-amber     { background: #b45309; color: #fff; }
   .rp-btn-dark      { background: #0f172a; color: #fff; }
-  .rp-btn-red       { background: #ef4444; color: #fff; }
+  .rp-btn-red       { background: #b91c1c; color: #fff; }
   .rp-btn-ghost     { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
   /* Floating Camera Controls */
@@ -47,7 +47,7 @@
   /*  Status bar  */
   .rp-statusbar     { padding: 7px 14px; font-size: 12px; font-weight: 500; border-top: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; min-height: 32px; }
   #room-status      { display: none; }
-  #selection-info   { display: none; margin-left: auto; font-size: 12px; color: #6366f1; font-weight: 600; }
+  #selection-info   { display: none; margin-left: auto; font-size: 12px; color: #4338ca; font-weight: 600; }
 
   /*  Sidebar Header & Filters  */
   .rp-sidebar-header{ padding: 14px 16px 10px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
@@ -57,27 +57,27 @@
   /*  Furniture cards (Column Layout)  */
   #room-furniture-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; scrollbar-width: thin; }
   .furniture-card   { display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; cursor: grab; position: relative; transition: all .15s; background: #fafafa; }
-  .furniture-card:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241,.1); background: #ffffff; }
+  .furniture-card:hover { border-color: #4338ca; box-shadow: 0 2px 8px rgba(67,56,202,.12); background: #ffffff; }
   .furniture-card img   { width: 60px; height: 60px; object-fit: contain; border-radius: 6px; background: #f8fafc; border: 1px solid #f1f5f9; flex-shrink: 0; }
   
   .fc-info          { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .fc-id            { font-size: 12px; font-weight: bold; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fc-type          { font-size: 11px; color: #64748b; margin-top: 3px; }
   
-  .btn-add-furn     { width: 24px; height: 24px; border-radius: 6px; border: none; background: #e0e7ff; color: #4338ca; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
-  .furniture-card:hover .btn-add-furn { background: #6366f1; color: #fff; }
+  .btn-add-furn     { width: 28px; height: 28px; border-radius: 6px; border: none; background: #e0e7ff; color: #3730a3; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
+  .furniture-card:hover .btn-add-furn { background: #4338ca; color: #fff; }
 
   /*  Drop zone hint  */
-  .rp-canvas.drag-over::after { content: 'Drop here'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #6366f1; background: rgba(99,102,241,.08); border: 3px dashed #6366f1; border-radius: 12px; pointer-events: none; z-index: 20;}
+  .rp-canvas.drag-over::after { content: 'Drop here'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #4338ca; background: rgba(67,56,202,.08); border: 3px dashed #4338ca; border-radius: 12px; pointer-events: none; z-index: 20;}
 
   /*  Hint bar  */
-  .rp-hint { padding: 10px 14px; font-size: 13px; color: #4338ca; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 8px; flex-shrink: 0; line-height: 1.4; }
+  .rp-hint { padding: 10px 14px; font-size: 13px; color: #3730a3; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 8px; flex-shrink: 0; line-height: 1.4; }
   .rp-hint b { color: #312e81; }
 </style>
 
 <div class="rp-root">
   <div class="rp-topbar">
-    <div class="rp-group">
+    <div class="rp-group rp-group-room">
       <span class="rp-label">Room</span>
       <input id="room-name" class="rp-input" style="width:130px" placeholder="Room name" value="Living Room">
       <select id="room-select" class="rp-select" style="max-width:140px"><option value="">— Load Saved —</option></select>
@@ -85,7 +85,7 @@
 
     <div class="rp-divider"></div>
 
-    <div class="rp-group">
+    <div class="rp-group rp-group-size">
       <span class="rp-label">Size (m)</span>
       <input id="room-width" class="rp-input" type="number" min="1" value="10" placeholder="W" style="width: 55px;">
       <span style="color:#94a3b8">×</span>
@@ -95,15 +95,15 @@
 
     <div class="rp-divider"></div>
 
-    <div class="rp-group">
+    <div class="rp-group rp-group-edit">
       <button id="btn-mode" class="rp-btn rp-btn-green"><i class="fa-solid fa-arrows-up-down-left-right"></i> Move Mode</button>
       <button id="btn-delete-item" class="rp-btn rp-btn-red" title="Delete selected (Del key)"><i class="fa-solid fa-trash"></i></button>
     </div>
 
-    <div class="rp-group" style="margin-left:auto">
+    <div class="rp-group rp-group-actions" style="margin-left:auto">
       <button id="btn-new-room" class="rp-btn rp-btn-ghost"><i class="fa-solid fa-plus"></i> New</button>
       <button id="btn-save-room" class="rp-btn rp-btn-amber"><i class="fa-solid fa-floppy-disk"></i> Save</button>
-      <button id="btn-add-to-cart" class="rp-btn rp-btn-dark"><i class="fa-solid fa-cart-plus"></i> Add to Cart</button>
+      <button id="btn-add-to-cart" class="rp-btn rp-btn-dark" aria-label="Add room items to cart" title="Add room items to cart"><i class="fa-solid fa-cart-plus"></i> <span class="rp-cart-label">Add to Cart</span></button>
     </div>
   </div>
 
@@ -145,7 +145,7 @@
       </div>
     </div><div class="rp-sidebar">
       <div class="rp-sidebar-header">
-        <h3><i class="fa-solid fa-couch" style="color:#6366f1"></i> Furniture Library</h3>
+        <h3><i class="fa-solid fa-couch" style="color:#4338ca"></i> Furniture Library</h3>
         <div class="rp-filter-group">
           <select id="filter-category" class="rp-select">
             <option value="">All Categories</option>

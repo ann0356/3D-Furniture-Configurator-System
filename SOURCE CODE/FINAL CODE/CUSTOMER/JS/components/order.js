@@ -1,5 +1,6 @@
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js';
 import { loadCustomerContent } from '../script.js';
+import { escapeHTML, safeAssetUrl, safeNumber } from '../utils/dom.js';
 
 let orderItemsData = [];
 let currentUser = null;
@@ -39,9 +40,9 @@ export async function initOrder(params) {
         const shippingBox = document.getElementById('order-shipping-info');
         if (shippingBox && currentUser) {
             shippingBox.innerHTML = `
-                <p style="margin:0 0 5px 0;"><strong>Name:</strong> ${currentUser.first_name} ${currentUser.last_name}</p>
-                <p style="margin:0 0 5px 0;"><strong>Phone:</strong> ${currentUser.phone || 'N/A'}</p>
-                <p style="margin:0;"><strong>Address:</strong> ${currentUser.address || 'N/A'}</p>
+                <p style="margin:0 0 5px 0;"><strong>Name:</strong> ${escapeHTML(currentUser.first_name)} ${escapeHTML(currentUser.last_name)}</p>
+                <p style="margin:0 0 5px 0;"><strong>Phone:</strong> ${escapeHTML(currentUser.phone || 'N/A')}</p>
+                <p style="margin:0;"><strong>Address:</strong> ${escapeHTML(currentUser.address || 'N/A')}</p>
             `;
         }
 
@@ -64,7 +65,7 @@ export async function initOrder(params) {
         
         renderOrderItems();
 
-        document.getElementById('btn-pay').onclick = processPayment;
+        document.getElementById('btn-pay').onclick = submitOrder;
 
     } catch (err) {
         console.error("Order Load Error:", err);
@@ -82,9 +83,10 @@ function renderOrderItems() {
         const furn = struct.furniture || {};
         
         const name = furn.furniture_name || 'Item';
-        const price = Number(struct.price || 0);
-        const qty = Number(item.quantity || 1);
+        const price = safeNumber(struct.price);
+        const qty = Math.max(1, safeNumber(item.quantity, 1));
         const subtotal = price * qty;
+        const imageUrl = safeAssetUrl(struct.image_url, 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png');
         
         finalTotalAmount += subtotal;
 
@@ -92,10 +94,10 @@ function renderOrderItems() {
         row.style.cssText = "display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #f8fafc; padding-bottom: 15px;";
         
         row.innerHTML = `
-            <img src="${struct.image_url || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png'}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #f1f5f9;">
+            <img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(name)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #f1f5f9;">
             <div style="flex-grow: 1;">
-                <h4 style="margin: 0 0 5px 0; font-size: 16px; color: #1e2937;">${name}</h4>
-                <p style="margin: 0; font-size: 13px; color: #64748b;">${struct.structure_name || ''} • ${struct.colour || ''}</p>
+                <h4 style="margin: 0 0 5px 0; font-size: 16px; color: #1e2937;">${escapeHTML(name)}</h4>
+                <p style="margin: 0; font-size: 13px; color: #64748b;">${escapeHTML(struct.structure_name || '')} • ${escapeHTML(struct.colour || '')}</p>
             </div>
             <div style="text-align: right;">
                 <div style="font-weight: bold; color: #1e2937;">RM ${subtotal.toFixed(2)}</div>
@@ -109,10 +111,10 @@ function renderOrderItems() {
     document.getElementById('order-total').innerText = `RM ${finalTotalAmount.toFixed(2)}`;
 }
 
-async function processPayment() {
+async function submitOrder() {
     const btnPay = document.getElementById('btn-pay');
     btnPay.disabled = true;
-    btnPay.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Processing...';
+    btnPay.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Submitting...';
 
     try {
         const newOrderId = 'ORD-' + Date.now();
@@ -137,7 +139,7 @@ async function processPayment() {
                 variant: struct.structure_name || 'Standard',
                 colour: struct.colour || 'N/A',
                 material: struct.material || 'N/A',
-                image: struct.image_url || ''
+                image: safeAssetUrl(struct.image_url)
             };
 
             const price = Number(struct.price || 0);
@@ -192,19 +194,20 @@ async function processPayment() {
             .in('cart_item_id', checkoutCartItemIds);
             
         if (cartDeleteError) console.warn("Failed to clear cart items, but order was placed:", cartDeleteError);
+        else document.dispatchEvent(new Event('cart-updated'));
 
-        btnPay.style.background = "#2ecc71";
-        btnPay.innerHTML = '<i class="fa-solid fa-check" style="margin-right: 8px;"></i> Payment Successful!';
+        btnPay.style.background = "#15803d";
+        btnPay.innerHTML = '<i class="fa-solid fa-check" style="margin-right: 8px;"></i> Order Submitted Successfully!';
         
         setTimeout(() => {
-            alert("Order placed successfully! Thank you for shopping with Ruma.");
+            alert("Order submitted successfully! Thank you for shopping with Ruma.");
             loadCustomerContent('home');
         }, 1500);
 
     } catch (error) {
-        console.error("Payment Error:", error);
-        alert("Payment failed. Please try again.");
+        console.error("Order submission error:", error);
+        alert("Order submission failed. Please try again.");
         btnPay.disabled = false;
-        btnPay.innerHTML = '<i class="fa-solid fa-credit-card" style="margin-right: 8px;"></i> Pay Now';
+        btnPay.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Submit Order';
     }
 }

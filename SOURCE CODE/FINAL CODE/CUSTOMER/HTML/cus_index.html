@@ -47,11 +47,11 @@
             </div>
             
             <div class="search-container">
-                <button class="search-icon" type="button" aria-label="Toggle Search Panel">
+                <button class="search-icon" type="button" aria-label="Open product search" aria-expanded="false" aria-controls="search-panel">
                     <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 </button>
 
-                <div class="search-panel">
+                <div class="search-panel" id="search-panel">
                     <input type="text" id="search-input" placeholder="Search for products..." aria-label="Search products">
                 </div> 
 
@@ -61,21 +61,22 @@
             </div>           
 
             <div class="user-account">
-                <a href="#" aria-label="User Account Menu">
-                    <i class="fa-regular fa-user" aria-hidden="true"></i>
-                </a>
+                <button type="button" class="account-trigger" aria-label="Open account menu" aria-expanded="false" aria-controls="account-menu">
+                    <i class="account-state-icon fa-regular fa-user" aria-hidden="true"></i>
+                </button>
 
-                <div class="dropdown-options">
-                    <a href="cus_reg.html" class="logged-out-only">Create an Account</a>
-                    <a href="cus_login.html" class="logged-out-only">Login</a>
-                    <a href="#" class="nav-link logged-in-only" data-page="profile" style="display: none;">User Profile</a>
-                    <a href="#" class="logged-in-only" id="nav-logout-btn" style="display: none;">Logout</a>
+                <div class="dropdown-options" id="account-menu">
+                    <a href="cus_reg.html" class="logged-out-only"><i class="account-menu-icon fa-solid fa-user-plus" aria-hidden="true"></i>Create an Account</a>
+                    <a href="cus_login.html" class="logged-out-only"><i class="account-menu-icon fa-solid fa-right-to-bracket" aria-hidden="true"></i>Login</a>
+                    <a href="#" class="nav-link logged-in-only" data-page="profile" hidden><i class="account-menu-icon fa-solid fa-user-gear" aria-hidden="true"></i>User Profile</a>
+                    <a href="#" class="logged-in-only" id="nav-logout-btn" hidden><i class="account-menu-icon fa-solid fa-right-from-bracket" aria-hidden="true"></i>Logout</a>
                 </div>
             </div>
 
             <div class="shopping-cart">
                 <a href="#" class="nav-link" data-page="cart" aria-label="View Shopping Cart">
                     <i class="fa-solid fa-cart-arrow-down" aria-hidden="true"></i>
+                    <span id="cart-count-badge" class="cart-count-badge" hidden aria-live="polite" aria-label="0 items in cart">0</span>
                 </a>
             </div>
         </div>
@@ -93,11 +94,11 @@
         Copyright © 2026 Ruma Home Sdn Bhd (1175670-T). All rights reserved.
     </footer>
 
-    <button id="a11y-trigger" aria-label="Open Accessibility Menu" style="position: fixed; bottom: 30px; left: 30px; background: #2563eb; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10000;">
+    <button id="a11y-trigger" aria-label="Open accessibility menu" aria-expanded="false" aria-controls="a11y-panel" style="position: fixed; bottom: 30px; left: 30px; background: #1d4ed8; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10000;">
         <i class="fa-solid fa-universal-access"></i>
     </button>
 
-    <div id="a11y-panel" style="display: none; position: fixed; bottom: 90px; left: 30px; background: var(--bg-main); border: 2px solid var(--text-main); border-radius: 12px; padding: 20px; width: 250px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 10000; font-family: 'Inter', sans-serif;">
+    <div id="a11y-panel" role="dialog" aria-label="Accessibility settings" style="display: none; position: fixed; bottom: 90px; left: 30px; background: var(--bg-main); border: 2px solid var(--text-main); border-radius: 12px; padding: 20px; width: 250px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 10000; font-family: 'Inter', sans-serif;">
         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text-main);">Accessibility Tools</h3>
         
         <div style="margin-bottom: 20px;">

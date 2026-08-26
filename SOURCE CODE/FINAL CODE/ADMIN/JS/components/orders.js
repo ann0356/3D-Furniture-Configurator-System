@@ -7,6 +7,25 @@ const COL_STATUS = 'status';
 const COL_TOTAL = 'total_amount';     
 
 let allOrders = [];
+let isOverlayCloseBound = false;
+
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function safeAssetUrl(value, fallback) {
+    try {
+        const url = new URL(String(value || ''), window.location.origin);
+        return url.protocol === 'https:' ? url.href : fallback;
+    } catch {
+        return fallback;
+    }
+}
 
 export async function initAdminOrder() {
     console.log("Initializing Admin Order Management...");
@@ -41,10 +60,13 @@ function bindEvents() {
     document.getElementById('ao-modal-close')?.addEventListener('click', () => {
         document.getElementById('ao-modal-overlay').style.display = 'none';
     });
-    window.addEventListener('click', (e) => {
-        const overlay = document.getElementById('ao-modal-overlay');
-        if (e.target === overlay) overlay.style.display = 'none';
-    });
+    if (!isOverlayCloseBound) {
+        window.addEventListener('click', (e) => {
+            const overlay = document.getElementById('ao-modal-overlay');
+            if (overlay && e.target === overlay) overlay.style.display = 'none';
+        });
+        isOverlayCloseBound = true;
+    }
 }
 
 async function fetchAllOrders() {
@@ -110,12 +132,12 @@ function renderTable(dataArray) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${orderId}</strong></td>
+            <td><strong>${escapeHTML(orderId)}</strong></td>
             <td style="color:#64748b; font-size: 13px;">${dateStr}</td>
-            <td>${customerName}</td>
+            <td>${escapeHTML(customerName)}</td>
             <td style="font-weight: bold;">RM ${Number(order[COL_TOTAL]).toFixed(2)}</td>
             <td>
-                <select class="status-select" data-id="${orderId}" style="${getStatusStyle(currentStatus)} ${cursorStyle}" ${disabledAttr}>
+                <select class="status-select" data-id="${escapeHTML(orderId)}" style="${getStatusStyle(currentStatus)} ${cursorStyle}" ${disabledAttr}>
                     <option value="order placed" ${currentStatus === 'order placed' ? 'selected' : ''}>Order Placed</option>
                     <option value="delivered" ${currentStatus === 'delivered' ? 'selected' : ''}>Delivered</option>
                     <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -179,14 +201,15 @@ async function openOrderDetail(order) {
             items.forEach(item => {
                 const s = item.structure || {};
                 const f = s.furniture || {};
+                const imageUrl = safeAssetUrl(s.image_url, 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png');
                 const row = document.createElement('tr');
                 row.style.borderBottom = "1px solid #f1f5f9";
                 row.innerHTML = `
                     <td style="padding: 12px 5px; display: flex; align-items: center; gap: 10px;">
-                        <img src="${s.image_url || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png'}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: #f8fafc;">
+                        <img src="${escapeHTML(imageUrl)}" alt="${escapeHTML(f.furniture_name || 'Product')}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: #f8fafc;">
                         <div>
-                            <div style="font-weight: 600; color: #1e293b;">${f.furniture_name || 'Product'}</div>
-                            <div style="font-size: 11px; color: #64748b;">${s.structure_name || ''} - ${s.colour || ''}</div>
+                            <div style="font-weight: 600; color: #1e293b;">${escapeHTML(f.furniture_name || 'Product')}</div>
+                            <div style="font-size: 11px; color: #64748b;">${escapeHTML(s.structure_name || '')} - ${escapeHTML(s.colour || '')}</div>
                         </div>
                     </td>
                     <td style="padding: 12px 5px;">RM ${Number(item.unit_price || 0).toFixed(2)}</td>

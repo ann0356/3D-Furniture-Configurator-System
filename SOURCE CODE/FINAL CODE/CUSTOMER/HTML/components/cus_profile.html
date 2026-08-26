@@ -1,42 +1,42 @@
 <div class="profile-view" style="padding: 20px 40px; max-width: 1200px; margin: auto; color: #1e2937;">
     
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
-        <h1 style="font-size: 32px; font-family: 'Roboto Slab', serif; margin: 0;">My Account</h1>
+    <div class="profile-heading" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+        <h1 class="page-heading" style="font-size: 32px; font-family: 'Roboto Slab', serif; margin: 0;">My Account</h1>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 40px;">
+    <div class="profile-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 40px;">
         
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; height: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
             <h3 style="margin-top: 0; font-size: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px;">Profile Settings</h3>
             
             <form id="profile-form" style="display: flex; flex-direction: column; gap: 15px;">
                 <div>
-                    <label style="font-size: 14px; font-weight: 500; color: #64748b; margin-bottom: 5px; display: block;">Email (Cannot be changed)</label>
+                    <label for="prof-email" style="font-size: 14px; font-weight: 500; color: #64748b; margin-bottom: 5px; display: block;">Email (Cannot be changed)</label>
                     <input type="email" id="prof-email" readonly style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; color: #94a3b8; outline: none; box-sizing: border-box;">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="profile-name-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
-                        <label style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">First Name</label>
+                        <label for="prof-fname" style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">First Name</label>
                         <input type="text" id="prof-fname" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; box-sizing: border-box;">
                     </div>
                     <div>
-                        <label style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Last Name</label>
+                        <label for="prof-lname" style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Last Name</label>
                         <input type="text" id="prof-lname" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; box-sizing: border-box;">
                     </div>
                 </div>
 
                 <div>
-                    <label style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Phone Number</label>
+                    <label for="prof-phone" style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Phone Number</label>
                     <input type="text" id="prof-phone" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; box-sizing: border-box;">
                 </div>
 
                 <div>
-                    <label style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Home Address</label>
+                    <label for="prof-address" style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 5px; display: block;">Home Address</label>
                     <textarea id="prof-address" rows="3" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
                 </div>
 
-                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <div class="profile-actions" style="display: flex; gap: 15px; margin-top: 10px;">
                     <button type="button" id="btn-update-profile" style="flex: 1; background: #1e2937; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s;">
                         Update Profile
                     </button>
@@ -48,11 +48,11 @@
             </form>
         </div>
 
-        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; height: 490px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+        <div class="profile-orders" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; height: 490px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
             
             <div style="display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;">
-                <button id="tab-active" class="order-tab active" style="background: none; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; color: #3b82f6; border-bottom: 3px solid #3b82f6; margin-bottom: -2px;">Active Orders</button>
-                <button id="tab-history" class="order-tab" style="background: none; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; margin-bottom: -2px;">Order History</button>
+                <button id="tab-active" class="order-tab active" type="button" aria-pressed="true" style="background: none; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; color: var(--brand); border-bottom: 3px solid var(--brand); margin-bottom: -2px;">Active Orders</button>
+                <button id="tab-history" class="order-tab" type="button" aria-pressed="false" style="background: none; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; margin-bottom: -2px;">Order History</button>
             </div>
 
             <div id="orders-container" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 5px;">

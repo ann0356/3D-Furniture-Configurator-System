@@ -5,6 +5,24 @@ import { initAdminOrder } from './components/orders.js';
 import { initFeedback } from './components/feedback.js';
 
 const mainContent = document.getElementById('main-content');
+let isAdminExitCleanupBound = false;
+
+function bindAdminExitCleanup() {
+    if (isAdminExitCleanupBound) return;
+
+    window.addEventListener('pagehide', () => {
+        // pagehide is synchronous, unlike an async signOut request that browsers may cancel.
+        localStorage.removeItem('sb-admin-auth-token');
+        sessionStorage.removeItem('sb-admin-auth-token');
+    });
+
+    // A page restored from the browser's back-forward cache must re-authenticate too.
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) window.location.replace('admin_login.html');
+    });
+
+    isAdminExitCleanupBound = true;
+}
 
 // check authentication
 async function checkAuth() {
@@ -33,6 +51,7 @@ async function checkAuth() {
         }
 
         document.body.style.display = 'flex'; 
+        bindAdminExitCleanup();
         
         // display the page view last time
         const savedPage = localStorage.getItem('admin_current_page') || 'dashboard';

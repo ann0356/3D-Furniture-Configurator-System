@@ -1,5 +1,14 @@
 import { _supabase } from '../../../SUPABASE/supabase_admin_conn.js';
 
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
 export async function initFeedback() {
     const tbody = document.getElementById('feedback-tbody');
     let isInitialized = tbody.dataset.initialized;
@@ -23,26 +32,30 @@ export async function initFeedback() {
             return;
         }
 
-        tbody.innerHTML = data.map(msg => `
-            <tr data-id="${msg.id}">
-                <td><span class="status-badge ${msg.status}">${msg.status.toUpperCase()}</span></td>
+        tbody.innerHTML = data.map(msg => {
+            const status = msg.status === 'read' ? 'read' : 'unread';
+            const id = escapeHTML(msg.id);
+            return `
+            <tr data-id="${id}">
+                <td><span class="status-badge ${status}">${status.toUpperCase()}</span></td>
                 <td>
-                    <strong>${msg.name}</strong><br>
-                    <small>${msg.email}</small><br>
-                    <small>Tel: ${msg.phone}</small>
+                    <strong>${escapeHTML(msg.name)}</strong><br>
+                    <small>${escapeHTML(msg.email)}</small><br>
+                    <small>Tel: ${escapeHTML(msg.phone)}</small>
                 </td>
-                <td>${msg.order_number || '-'}</td>
+                <td>${escapeHTML(msg.order_number || '-')}</td>
                 <td style="max-width:300px;">
-                    <strong>${msg.subject}</strong><br>
-                    ${msg.message}
+                    <strong>${escapeHTML(msg.subject)}</strong><br>
+                    ${escapeHTML(msg.message)}
                 </td>
                 <td>
-                    ${msg.status === 'unread'
-                        ? `<button class="btn-action mark-read-btn" data-id="${msg.id}">Mark Read</button>`
+                    ${status === 'unread'
+                        ? `<button class="btn-action mark-read-btn" data-id="${id}">Mark Read</button>`
                         : `<span style="color:#ccc;font-size:12px;">Read</span>`}
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     }
 
     if (!isInitialized) {

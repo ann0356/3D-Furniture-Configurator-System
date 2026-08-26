@@ -2,7 +2,8 @@ export function initHome(loadContentFunction) {
     console.log("Initializing Home Page...");
 
     document.querySelectorAll('.cus-nav-link').forEach(panel => {
-        panel.addEventListener('click', () => {
+        panel.addEventListener('click', (event) => {
+            event.preventDefault();
             const pageName = panel.getAttribute('data-page');
             console.log("Navigating to:", pageName);
 
@@ -26,11 +27,13 @@ export function initHome(loadContentFunction) {
     function goToSlide(index) {
         slides[currentSlide].classList.remove('active');
         dots[currentSlide].classList.remove('active');
+        dots[currentSlide].setAttribute('aria-current', 'false');
 
         currentSlide = (index + slides.length) % slides.length;
         
         slides[currentSlide].classList.add('active');
         dots[currentSlide].classList.add('active');
+        dots[currentSlide].setAttribute('aria-current', 'true');
     }
 
     if (prevBtn) prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));

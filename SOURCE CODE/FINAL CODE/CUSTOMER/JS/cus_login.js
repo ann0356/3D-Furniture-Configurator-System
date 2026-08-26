@@ -6,7 +6,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const togglePasswordCheckbox = document.getElementById('toggle-password');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const forgotPwdLink = document.getElementById('forgot-password-link'); // 获取忘记密码按钮
 
     togglePasswordCheckbox.addEventListener('change', function() {
         passwordInput.type = this.checked ? 'text' : 'password';
@@ -21,31 +20,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
-    if (forgotPwdLink) {
-        forgotPwdLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            
-            const email = emailInput.value.trim();
-
-            if (!email) {
-                alert("Please enter your email address in the box first to reset your password.");
-                emailInput.focus();
-                return;
-            }
-
-            alert("Sending reset email...");
-            const { data, error } = await _supabase.auth.resetPasswordForEmail(email);
-
-            if (error) {
-                alert("Failed to send reset email: " + error.message);
-            } else {
-                alert("Password reset email sent! Please check your inbox.");
-            }
-
-             redirectTo: 'http://127.0.0.1:5501/CUSTOMER/HTML/cus_reset_password.html'
-        });
-    }
 
     loginBtn.addEventListener('click', async () => {
         const email = emailInput.value.trim();
@@ -96,7 +70,8 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log("Could not fetch profile info:", profileError);
         }
 
-        window.location.href = "../HTML/cus_index.html";
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        window.location.href = redirect === 'room' ? 'cus_index.html?page=room' : 'cus_index.html';
     });
 
 });

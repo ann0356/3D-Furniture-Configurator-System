@@ -1,5 +1,6 @@
 import { _supabase } from '../../../SUPABASE/supabase_customer_conn.js';
 import { loadCustomerContent } from '../script.js';
+import { escapeHTML, safeAssetUrl, safeNumber } from '../utils/dom.js';
 
 let rawVariants = [];
 let uniqueStructureNames = [];
@@ -95,10 +96,15 @@ function renderStructureButtons() {
 
     uniqueStructureNames.forEach(sName => {
         const btn = document.createElement('button');
+        const isActive = sName === activeStructureName;
+        btn.type = 'button';
+        btn.className = 'pd-option pd-structure-option';
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', String(isActive));
         btn.innerText = sName;
         btn.style.cssText = `
             padding: 8px 16px; border-radius: 4px; cursor: pointer; border: 1px solid #cbd5e1; font-weight: 500; transition: all 0.2s;
-            ${sName === activeStructureName ? 'background: #3b82f6; color: white; border-color: #3b82f6;' : 'background: white; color: #475569;'}
+            ${isActive ? 'background: #1d4ed8; color: white; border-color: #1d4ed8;' : 'background: white; color: #475569;'}
         `;
         
         btn.onclick = () => {
@@ -125,10 +131,15 @@ function renderColourButtons() {
 
     uniqueColours.forEach(cName => {
         const btn = document.createElement('button');
+        const isActive = cName === activeColour;
+        btn.type = 'button';
+        btn.className = 'pd-option pd-colour-option';
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', String(isActive));
         btn.innerText = cName;
         btn.style.cssText = `
             padding: 8px 16px; border-radius: 20px; cursor: pointer; border: 1px solid #cbd5e1; font-weight: 500; transition: all 0.2s;
-            ${cName === activeColour ? 'background: #1e2937; color: white; border-color: #1e2937;' : 'background: white; color: #475569;'}
+            ${isActive ? 'background: #1d4ed8; color: white; border-color: #1d4ed8;' : 'background: white; color: #475569;'}
         `;
 
         btn.onclick = () => {
@@ -156,29 +167,29 @@ function updateMediaAndPricing() {
     
     if (!exactSKU) return;
 
-    document.getElementById('pd-price').innerText = `RM ${Number(exactSKU.price).toFixed(2)}`;
+    document.getElementById('pd-price').innerText = `RM ${safeNumber(exactSKU.price).toFixed(2)}`;
     
     const stock = Number(exactSKU.stock || 0);
     const stockBadge = document.getElementById('pd-stock-badge');
     if (stockBadge) {
-        if (stock >= 100) stockBadge.innerHTML = `<span style="color:#2ecc71; font-weight:bold;"><i class="fa-solid fa-box-open"></i> In Stock</span>`;
-        else if (stock > 0) stockBadge.innerHTML = `<span style="color:#e67e22; font-weight:bold;">Only ${stock} left</span>`;
-        else stockBadge.innerHTML = `<span style="color:#e74c3c; font-weight:bold;">Out of stock</span>`;
+        if (stock >= 100) stockBadge.innerHTML = `<span style="color:var(--success); font-weight:bold;"><i class="fa-solid fa-box-open"></i> In Stock</span>`;
+        else if (stock > 0) stockBadge.innerHTML = `<span style="color:var(--price); font-weight:bold;">Only ${stock} left</span>`;
+        else stockBadge.innerHTML = `<span style="color:var(--danger); font-weight:bold;">Out of stock</span>`;
     }
 
     const materialBox = document.getElementById('pd-material-content');
     const dimensionsBox = document.getElementById('pd-dimensions-content');
 
     if (materialBox) {
-        materialBox.innerHTML = `<strong>Main Material:</strong> ${exactSKU.material || 'Premium Fabric'}`;
+        materialBox.innerHTML = `<strong>Main Material:</strong> ${escapeHTML(exactSKU.material || 'Premium Fabric')}`;
     }
 
     if (dimensionsBox) {
         dimensionsBox.innerHTML = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <span><strong>Length:</strong> ${exactSKU.length || 0} cm</span>
-                <span><strong>Width:</strong> ${exactSKU.width || 0} cm</span>
-                <span><strong>Height:</strong> ${exactSKU.height || 0} cm</span>
+                <span><strong>Length:</strong> ${safeNumber(exactSKU.length)} cm</span>
+                <span><strong>Width:</strong> ${safeNumber(exactSKU.width)} cm</span>
+                <span><strong>Height:</strong> ${safeNumber(exactSKU.height)} cm</span>
             </div>
         `;
     }
@@ -186,10 +197,10 @@ function updateMediaAndPricing() {
     const imgElem = document.getElementById('display-image');
     const modelElem = document.getElementById('display-model');
     
-    if (imgElem) imgElem.src = exactSKU.image_url || 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png';
+    if (imgElem) imgElem.src = safeAssetUrl(exactSKU.image_url, 'https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/ERROR%20PICTURE.png');
     
     if (modelElem) {
-        modelElem.src = exactSKU.model_url || '';
+        modelElem.src = safeAssetUrl(exactSKU.model_url);
         
         modelElem.removeAttribute('environment-image'); 
 
@@ -201,7 +212,7 @@ function updateMediaAndPricing() {
         modelElem.setAttribute('shadow-softness', '0.8'); 
     }
 
-    applyMediaViewMode(exactSKU.model_url);
+    applyMediaViewMode(safeAssetUrl(exactSKU.model_url));
 }
 
 function bindQuantityControls() {
@@ -283,6 +294,10 @@ function bind3DAngleControls() {
 
     const highlightAngleBtn = (activeBtn) => {
         [btnFront, btnSide, btnTop].forEach(btn => {
+            if (!btn) return;
+            const isActive = btn === activeBtn;
+            btn.classList.toggle('is-active', isActive);
+            btn.setAttribute('aria-pressed', String(isActive));
             if (btn === activeBtn) {
                 btn.style.background = "#1e2937"; btn.style.color = "white";
             } else {
@@ -305,6 +320,15 @@ function applyMediaViewMode(currentModelUrl) {
     
     const anglesPanel = document.getElementById('pd-view-angles-panel');
     const instructionPanel = document.getElementById('pd-3d-instructions');
+
+    const setModeButtonState = (button, isActive) => {
+        if (!button) return;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+    };
+
+    setModeButtonState(btn2d, displayMode === '2d');
+    setModeButtonState(btn3d, displayMode === '3d');
 
     if (warningElem) warningElem.style.display = 'none';
 
@@ -342,7 +366,11 @@ function applyMediaViewMode(currentModelUrl) {
             if (modelElem && btnFront) {
                 modelElem.cameraOrbit = "0deg 75deg auto";
                 [btnFront, document.getElementById('btn-angle-side'), document.getElementById('btn-angle-top')].forEach(b => {
-                    if (b === btnFront) { b.style.background = "#1e2937"; b.style.color = "white"; }
+                    if (!b) return;
+                    const isActive = b === btnFront;
+                    b.classList.toggle('is-active', isActive);
+                    b.setAttribute('aria-pressed', String(isActive));
+                    if (isActive) { b.style.background = "#1e2937"; b.style.color = "white"; }
                     else { b.style.background = "white"; b.style.color = "#475569"; }
                 });
             }
@@ -454,7 +482,8 @@ async function handleAddToCart() {
             if (insertItemError) throw insertItemError;
         }
 
-        btn.style.background = "#2ecc71"; 
+        document.dispatchEvent(new Event('cart-updated'));
+        btn.style.background = "#15803d";
         btn.innerHTML = `<i class="fa-solid fa-check" style="color:white; margin-right:8px;"></i> Added ${qtyToAdd} to Cart!`;
         
         setTimeout(() => {
