@@ -2,6 +2,12 @@ import { _supabase } from '../../../SUPABASE/supabase_admin_conn.js';
 
 let salesChartInstance = null;
 let categoryChartInstance = null;
+let dashboardReportData = null;
+
+const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 export async function initDashboard() {
     console.log("Dashboard loading real data...");
@@ -21,30 +27,154 @@ export async function initDashboard() {
         await loadDashboardData(yearSelect.value, e.target.value);
     });
 
-    // Export PDF
-    document.getElementById('export-report-btn').addEventListener('click', () => {
-        const element = document.querySelector('.dashboard-page');
-        const headerArea = document.querySelector('.page-header');
-        
-        // hide other layout
-        if (headerArea) headerArea.style.display = 'none';
+    const exportButton = document.getElementById('export-report-btn');
+    exportButton.addEventListener('click', () => exportDashboardReport(yearSelect, monthSelect, exportButton));
+}
 
-        html2pdf().set({
-            margin: [10, 0, 10, 0],
-            filename: `Report_${yearSelect.value}_${monthSelect.value}.pdf`,
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { 
-                scale: 2, 
-                scrollX: 0, 
-                scrollY: 0, 
-                useCORS: true 
-            }, 
+async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
+    if (!dashboardReportData || typeof html2pdf !== 'function') {
+        alert('Dashboard data is still loading. Please wait a moment and try again.');
+        return;
+    }
+
+    const originalLabel = exportButton.innerHTML;
+    exportButton.disabled = true;
+    exportButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Preparing report…';
+
+    const report = createReportElement(dashboardReportData);
+    document.body.appendChild(report);
+
+    try {
+        await html2pdf().set({
+            margin: [8, 8, 8, 8],
+            filename: `Ruma_Home_Performance_Report_${yearSelect.value}_${monthSelect.value}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                scrollX: 0,
+                scrollY: 0,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        }).from(element).save().then(() => {
-            // redisplay the hidden layout
-            if (headerArea) headerArea.style.display = 'flex';
-        });
+        }).from(report).save();
+    } catch (error) {
+        console.error('Unable to export dashboard report:', error);
+        alert('Unable to generate the report. Please try again.');
+    } finally {
+        report.remove();
+        exportButton.disabled = false;
+        exportButton.innerHTML = originalLabel;
+    }
+}
+
+function createReportElement(reportData) {
+    const salesChart = document.getElementById('salesChart');
+    const salesChartImage = salesChart?.toDataURL('image/png') || '';
+    const maxCategoryQuantity = Math.max(1, ...reportData.categorySales.map((category) => category.quantity));
+    const categoryRows = reportData.categorySales.slice(0, 4).map((category) => {
+        const percentage = Math.round((category.quantity / maxCategoryQuantity) * 100);
+        return `
+            <div class="pdf-report-category-row">
+                <div><span>${escapeHtml(category.name)}</span><strong>${category.quantity} units</strong></div>
+                <div class="pdf-report-track"><span style="width: ${percentage}%"></span></div>
+            </div>`;
+    }).join('') || '<p class="pdf-report-empty">No delivered product sales for this period.</p>';
+
+    const productRows = reportData.productSales.slice(0, 3).map((product, index) => `
+        <tr>
+            <td><span class="pdf-report-rank">${index + 1}</span>${escapeHtml(product.name)}</td>
+            <td>${product.quantity}</td>
+        </tr>`).join('') || '<tr><td colspan="2" class="pdf-report-empty">No delivered product sales for this period.</td></tr>';
+
+    const report = document.createElement('section');
+    report.className = 'pdf-report';
+    report.setAttribute('aria-hidden', 'true');
+    report.innerHTML = `
+        <header class="pdf-report-header">
+            <div class="pdf-report-brand">
+                <span class="pdf-report-brand-mark">RH</span>
+                <span><strong>Ruma Home</strong><small>Admin performance report</small></span>
+            </div>
+            <div class="pdf-report-period"><span>Reporting period</span><strong>${escapeHtml(reportData.periodLabel)}</strong></div>
+        </header>
+        <div class="pdf-report-title">
+            <h1>Monthly performance overview</h1>
+            <p>A consolidated report based on delivered orders and current customer records.</p>
+        </div>
+        <section class="pdf-report-kpis">
+            <div class="pdf-report-kpi revenue"><span>Total revenue</span><strong>${formatCurrency(reportData.totalRevenue)}</strong></div>
+            <div class="pdf-report-kpi orders"><span>Delivered orders</span><strong>${reportData.deliveredOrders.length}</strong></div>
+            <div class="pdf-report-kpi customers"><span>New customers</span><strong>${reportData.usersCount}</strong></div>
+            <div class="pdf-report-kpi average"><span>Average order value</span><strong>${formatCurrency(reportData.averageOrderValue)}</strong></div>
+        </section>
+        <section class="pdf-report-analysis">
+            <article class="pdf-report-panel pdf-report-sales-panel">
+                <div class="pdf-report-panel-heading"><h2>Revenue trend</h2><span>Delivered sales (RM)</span></div>
+                ${salesChartImage
+                    ? `<img class="pdf-report-chart" src="${salesChartImage}" alt="Revenue trend chart">`
+                    : '<p class="pdf-report-empty">Revenue chart is unavailable.</p>'}
+            </article>
+            <article class="pdf-report-panel">
+                <div class="pdf-report-panel-heading"><h2>Category share</h2><span>Units sold</span></div>
+                <div class="pdf-report-category-list">${categoryRows}</div>
+            </article>
+        </section>
+        <section class="pdf-report-products">
+            <div class="pdf-report-panel-heading"><h2>Top products</h2><span>Delivered units sold</span></div>
+            <table>
+                <thead><tr><th>Product</th><th>Units sold</th></tr></thead>
+                <tbody>${productRows}</tbody>
+            </table>
+        </section>
+        <footer class="pdf-report-footer">Generated by Ruma Home Admin · ${new Date().toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })}</footer>`;
+    return report;
+}
+
+function createReportData(orders, usersCount, orderItems, year, month) {
+    const deliveredOrders = orders.filter((order) => order.status?.toLowerCase() === 'delivered');
+    const deliveredOrderIds = new Set(deliveredOrders.map((order) => order.order_id));
+    const deliveredItems = orderItems.filter((item) => deliveredOrderIds.has(item.order_id));
+    const totalRevenue = deliveredOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    const productSales = buildSalesSummary(deliveredItems, (item) => item.structure?.furniture?.furniture_name);
+    const categorySales = buildSalesSummary(deliveredItems, (item) => item.structure?.furniture?.type?.category?.category_name);
+
+    return {
+        deliveredOrders,
+        usersCount,
+        totalRevenue,
+        averageOrderValue: deliveredOrders.length ? totalRevenue / deliveredOrders.length : 0,
+        productSales,
+        categorySales,
+        periodLabel: month === 'all' ? `January – December ${year}` : `${MONTH_NAMES[Number(month) - 1]} ${year}`
+    };
+}
+
+function buildSalesSummary(orderItems, labelSelector) {
+    const totals = new Map();
+    orderItems.forEach((item) => {
+        const label = labelSelector(item);
+        if (!label) return;
+        totals.set(label, (totals.get(label) || 0) + Number(item.quantity || 0));
     });
+    return [...totals.entries()]
+        .map(([name, quantity]) => ({ name, quantity }))
+        .sort((first, second) => second.quantity - first.quantity || first.name.localeCompare(second.name));
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-MY', {
+        style: 'currency',
+        currency: 'MYR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[character]));
 }
 
 // function to get data from db
@@ -64,6 +194,7 @@ function getDateRange(year, month) {
 async function loadDashboardData(year, month) {
     console.log(`Fetching data from database for ${year}, ${month === 'all' ? 'All Year' : 'Month ' + month}...`);
     const { startDate, endDate } = getDateRange(year, month);
+    dashboardReportData = null;
 
     try {
         // get total order
@@ -110,6 +241,8 @@ async function loadDashboardData(year, month) {
             if (itemsErr) throw itemsErr;
             orderItems = itemsData || [];
         }
+
+        dashboardReportData = createReportData(validOrders, usersCount || 0, orderItems, year, month);
 
         // update data to render function
         updateKPIs(validOrders, usersCount || 0, orderItems);
