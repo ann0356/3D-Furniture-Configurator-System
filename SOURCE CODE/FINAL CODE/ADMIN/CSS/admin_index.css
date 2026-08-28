@@ -421,7 +421,7 @@ h1, h2, h3, h4 { color: var(--admin-text); }
 .pdf-report {
     width: 1100px;
     margin: 0 auto;
-    padding: 34px 38px 26px;
+    padding: 18px 38px 26px;
     color: #172033;
     background: #fff;
     font-family: 'Inter', Arial, sans-serif;
@@ -438,29 +438,15 @@ h1, h2, h3, h4 { color: var(--admin-text); }
     border-bottom: 2px solid #182235;
 }
 
-.pdf-report-brand { display: inline-flex; align-items: center; gap: 11px; }
-.pdf-report-brand-mark {
-    width: 34px;
-    height: 34px;
-    display: inline-grid;
-    place-items: center;
-    border-radius: 50%;
-    color: #fff;
-    background: #182235;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-}
-.pdf-report-brand strong,
-.pdf-report-brand small { display: block; }
-.pdf-report-brand strong { color: #182235; font-size: 16px; }
+.pdf-report-brand { display: inline-flex; align-items: center; gap: 12px; }
+.pdf-report-logo { width: 142px; height: 38px; display: block; object-fit: contain; object-position: left center; }
 .pdf-report-brand small,
 .pdf-report-period span,
 .pdf-report-panel-heading span { color: #64748b; font-size: 11px; }
 .pdf-report-period { text-align: right; }
 .pdf-report-period strong { display: block; margin-top: 3px; color: #172033; font-size: 13px; }
 
-.pdf-report-title { margin: 19px 0 15px; }
+.pdf-report-title { margin: 14px 0 13px; }
 .pdf-report-title h1 { margin: 0; color: #172033; font-size: 27px; letter-spacing: -0.035em; }
 .pdf-report-title p { margin: 6px 0 0; color: #64748b; font-size: 12px; }
 

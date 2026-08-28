@@ -115,8 +115,8 @@ function createReportElement(reportData) {
     report.innerHTML = `
         <header class="pdf-report-header">
             <div class="pdf-report-brand">
-                <span class="pdf-report-brand-mark">RH</span>
-                <span><strong>Ruma Home</strong><small>Admin performance report</small></span>
+                <img class="pdf-report-logo" src="https://dzgtfwdqfqecetnfhcdi.supabase.co/storage/v1/object/public/furniture-images/Ruma_Logo_black.png" alt="Ruma Home" crossorigin="anonymous">
+                <small>Admin performance report</small>
             </div>
             <div class="pdf-report-period"><span>Reporting period</span><strong>${escapeHtml(reportData.periodLabel)}</strong></div>
         </header>
