@@ -45,19 +45,22 @@ async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
     document.body.appendChild(report);
 
     try {
-        await html2pdf().set({
-            margin: [8, 8, 8, 8],
-            filename: `Ruma_Home_Performance_Report_${yearSelect.value}_${monthSelect.value}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                scrollX: 0,
-                scrollY: 0,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        }).from(report).save();
+        await waitForReportLayout();
+        await new Promise((resolve, reject) => {
+            html2pdf().set({
+                margin: [8, 8, 8, 8],
+                filename: `Ruma_Home_Performance_Report_${yearSelect.value}_${monthSelect.value}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    scrollX: 0,
+                    scrollY: 0,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            }).from(report).save().then(resolve, reject);
+        });
     } catch (error) {
         console.error('Unable to export dashboard report:', error);
         alert('Unable to generate the report. Please try again.');
@@ -66,6 +69,12 @@ async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
         exportButton.disabled = false;
         exportButton.innerHTML = originalLabel;
     }
+}
+
+function waitForReportLayout() {
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
 }
 
 function createReportElement(reportData) {
