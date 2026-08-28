@@ -38,11 +38,22 @@ async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
     }
 
     const originalLabel = exportButton.innerHTML;
+    const dashboardPage = document.querySelector('.dashboard-page');
+    const reportHost = document.getElementById('main-content');
+
+    if (!dashboardPage || !reportHost) {
+        alert('Unable to prepare the report. Please refresh and try again.');
+        return;
+    }
+
     exportButton.disabled = true;
     exportButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Preparing report…';
 
     const report = createReportElement(dashboardReportData);
-    document.body.appendChild(report);
+    const previousScrollTop = reportHost.scrollTop;
+    dashboardPage.hidden = true;
+    reportHost.appendChild(report);
+    reportHost.scrollTop = 0;
 
     try {
         await waitForReportLayout();
@@ -66,6 +77,8 @@ async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
         alert('Unable to generate the report. Please try again.');
     } finally {
         report.remove();
+        dashboardPage.hidden = false;
+        reportHost.scrollTop = previousScrollTop;
         exportButton.disabled = false;
         exportButton.innerHTML = originalLabel;
     }

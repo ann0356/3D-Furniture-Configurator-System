@@ -419,16 +419,12 @@ h1, h2, h3, h4 { color: var(--admin-text); }
 
 /* Dedicated PDF report template */
 .pdf-report {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 120;
     width: 1100px;
+    margin: 0 auto;
     padding: 34px 38px 26px;
     color: #172033;
     background: #fff;
     font-family: 'Inter', Arial, sans-serif;
-    pointer-events: none;
 }
 
 .pdf-report * { box-sizing: border-box; }
