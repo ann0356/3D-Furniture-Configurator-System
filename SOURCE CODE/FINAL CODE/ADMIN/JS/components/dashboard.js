@@ -56,7 +56,7 @@ async function exportDashboardReport(yearSelect, monthSelect, exportButton) {
     reportHost.scrollTop = 0;
 
     try {
-        await waitForReportLayout();
+        await waitForReportImages(report);
         await new Promise((resolve, reject) => {
             html2pdf().set({
                 margin: [8, 8, 8, 8],
@@ -90,6 +90,19 @@ function waitForReportLayout() {
     });
 }
 
+function waitForReportImages(report) {
+    const images = [...report.querySelectorAll('img')];
+
+    return Promise.all(images.map((image) => {
+        if (image.complete) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', resolve, { once: true });
+        });
+    })).then(waitForReportLayout);
+}
+
 function createReportElement(reportData) {
     const salesChart = document.getElementById('salesChart');
     const salesChartImage = salesChart?.toDataURL('image/png') || '';
@@ -115,7 +128,7 @@ function createReportElement(reportData) {
     report.innerHTML = `
         <header class="pdf-report-header">
             <div class="pdf-report-brand">
-                <img class="pdf-report-logo" src="../ASSETS/Ruma_Logo_black.png" alt="Ruma Home">
+                <img class="pdf-report-logo" src="/ADMIN/ASSETS/Ruma_Logo_black.png?v=1" alt="Ruma Home">
                 <small>Admin performance report</small>
             </div>
             <div class="pdf-report-period"><span>Reporting period</span><strong>${escapeHtml(reportData.periodLabel)}</strong></div>
