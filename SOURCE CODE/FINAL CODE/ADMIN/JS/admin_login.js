@@ -8,6 +8,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const passwordInput = document.getElementById('password');
     const message = document.getElementById('login-message');
 
+    const openDashboard = () => {
+        localStorage.setItem('admin_current_page', 'dashboard');
+        window.location.replace('../HTML/admin_index.html');
+    };
+
     const showMessage = (text = '', type = 'error') => {
         message.textContent = text;
         message.classList.toggle('is-success', type === 'success');
@@ -24,7 +29,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                 .single();
 
             if (profile?.role === 'superadmin') {
-                window.location.replace('../HTML/admin_index.html');
+                openDashboard();
                 return;
             }
 
@@ -76,7 +81,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
 
             showMessage(`Welcome back, ${profileData.first_name || 'Admin'}. Opening the dashboard…`, 'success');
-            window.location.replace('../HTML/admin_index.html');
+            openDashboard();
         } catch (error) {
             console.error('Login process error:', error);
             await _supabase.auth.signOut();
